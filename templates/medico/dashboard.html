@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Dashboard Médico</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/medico.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_medico.html' %}
+
+        <div class="main-content">
+
+            <div class="dashboard-container">
+                <h1>Inicio</h1>
+
+                <!-- Estadísticas del día -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-user-injured"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">15</span>
+                            <span class="stat-label">Pacientes Asignados</span>
+                            <span class="stat-change positive">+2 nuevos</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-calendar-check"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">8</span>
+                            <span class="stat-label">Citas Hoy</span>
+                            <span class="stat-change neutral">6 presenciales, 2 virtuales</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">3</span>
+                            <span class="stat-label">Alertas Críticas</span>
+                            <span class="stat-change negative">Requieren atención</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">87%</span>
+                            <span class="stat-label">Adherencia Promedio</span>
+                            <span class="stat-change positive">+5% vs mes anterior</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sections-grid">
+                    <!-- Panel de Alertas Críticas -->
+                    <div class="card alertas-panel">
+                        <h2>Alertas Críticas Pendientes</h2>
+                        
+                        <div class="alerta-critica">
+                            <div class="alerta-header">
+                                <span class="alerta-paciente">Juan Pérez García</span>
+                                <span class="alerta-tiempo">Hace 15 min</span>
+                            </div>
+                            <div class="alerta-detalle">
+                                <strong>Glucosa:</strong> 320 mg/dL - Valor crítico
+                            </div>
+                            <div class="alerta-acciones">
+                                <button class="btn-alerta btn-contactar">
+                                    <i class="fas fa-phone"></i> Contactar
+                                </button>
+                                <button class="btn-alerta btn-resolver">
+                                    <i class="fas fa-check"></i> Resolver
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alerta-media">
+                            <div class="alerta-header">
+                                <span class="alerta-paciente">María González</span>
+                                <span class="alerta-tiempo">Hace 32 min</span>
+                            </div>
+                            <div class="alerta-detalle">
+                                <strong>Presión Arterial:</strong> 180/110 mmHg - Elevada
+                            </div>
+                            <div class="alerta-acciones">
+                                <button class="btn-alerta btn-contactar">
+                                    <i class="fas fa-phone"></i> Contactar
+                                </button>
+                                <button class="btn-alerta btn-resolver">
+                                    <i class="fas fa-check"></i> Resolver
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="alerta-baja">
+                            <div class="alerta-header">
+                                <span class="alerta-paciente">Carlos Silva</span>
+                                <span class="alerta-tiempo">Hace 2 horas</span>
+                            </div>
+                            <div class="alerta-detalle">
+                                <strong>Medicación:</strong> Omisión de dosis de insulina
+                            </div>
+                            <div class="alerta-acciones">
+                                <button class="btn-alerta btn-contactar">
+                                    <i class="fas fa-phone"></i> Contactar
+                                </button>
+                                <button class="btn-alerta btn-resolver">
+                                    <i class="fas fa-check"></i> Resolver
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="{{ url_for('medico_alertas_criticas') }}" class="btn btn-primary">
+                                Ver Todas las Alertas
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Próximas Citas -->
+                    <div class="card upcoming-appointments">
+                        <h2>Próximas Citas de Hoy</h2>
+                        <ul>
+                            <li>
+                                <div class="appointment-time">10:00</div>
+                                <div class="appointment-details">
+                                    <strong>Juan Pérez García</strong>
+                                    <span>Consulta Cardiológica - Presencial</span>
+                                    <span style="color: var(--high-criticality);">⚠️ Paciente con alerta crítica</span>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="appointment-time">11:30</div>
+                                <div class="appointment-details">
+                                    <strong>María Elena González</strong>
+                                    <span>Seguimiento Diabetes - Virtual</span>
+                                    <span style="color: var(--secondary-blue);">💻 Enlace Zoom disponible</span>
+                                </div>
+                            </li>
+                            <li>
+                                <div class="appointment-time">14:00</div>
+                                <div class="appointment-details">
+                                    <strong>Carlos Alberto Rodríguez</strong>
+                                    <span>Control Hipertensión - Presencial</span>
+                                    <span style="color: var(--positive-change);">✅ Paciente estable</span>
+                                </div>
+                            </li>
+                        </ul>
+                        <div style="text-align: center; margin-top: 15px;">
+                            <a href="{{ url_for('medico_mi_calendario') }}" class="btn btn-primary">
+                                Ver Calendario Completo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accesos rápidos -->
+                <div class="card" style="margin-top: 20px;">
+                    <h2>Accesos Rápidos</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <a href="{{ url_for('medico_mis_pacientes') }}" class="btn btn-primary" style="text-align: center; padding: 15px;">
+                            <i class="fas fa-users"></i><br>
+                            Gestionar Pacientes
+                        </a>
+                        <a href="{{ url_for('medico_graficos_pacientes') }}" class="btn btn-primary" style="text-align: center; padding: 15px;">
+                            <i class="fas fa-chart-bar"></i><br>
+                            Ver Gráficos
+                        </a>
+                        <a href="{{ url_for('medico_consultas_virtuales') }}" class="btn btn-primary" style="text-align: center; padding: 15px;">
+                            <i class="fas fa-video"></i><br>
+                            Consultas Virtuales
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/medico-dashboard.js') }}"></script>
+</body>
+</html>

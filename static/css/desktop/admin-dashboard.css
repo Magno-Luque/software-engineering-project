@@ -1,0 +1,198 @@
+/* static/css/desktop/dashboard-desktop.css */
+
+/* -----------------------------------------------------------------------------
+   SECCIÓN: Contenedor Principal del Dashboard
+   Propósito: Estructura base para el panel de administración
+   Comportamiento:
+     - Fondo claro con padding generoso
+     - Crecimiento flexible para ocupar espacio disponible
+------------------------------------------------------------------------------ */
+.dashboard-container {
+    padding: 30px;
+    background-color: #f4f6f9; /* Fondo claro para contraste visual */
+    flex-grow: 1; /* Ocupa espacio disponible en contenedor padre */
+}
+
+/* Título principal */
+.dashboard-container h1 {
+    font-size: 2em;
+    margin-bottom: 25px;
+    color: var(--text-dark); /* Usa variable de color para consistencia */
+}
+
+/* -----------------------------------------------------------------------------
+   SECCIÓN: Grid de Estadísticas
+   Propósito: Mostrar métricas clave (KPI) en tarjetas responsivas
+   Comportamiento responsive:
+     - Columnas adaptables (min 250px, max 1fr)
+     - Espaciado uniforme entre tarjetas
+------------------------------------------------------------------------------ */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px; /* Espacio entre tarjetas */
+    margin-bottom: 30px; /* Separación con siguiente sección */
+}
+
+/* Componente: Tarjeta de Estadística
+   Estructura:
+     - Icono + contenedor de texto flexible
+     - Sombra suave para efecto de elevación
+------------------------------------------------------------------------------ */
+.stat-card {
+    background-color: var(--card-bg); /* Fondo usando variable */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow); /* Sombra consistente */
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Espacio entre icono y texto */
+}
+
+/* Contenedor de información numérica */
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Número destacado */
+.stat-number {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: var(--primary-blue); /* Color primario para énfasis */
+}
+
+/* Etiqueta descriptiva */
+.stat-label {
+    font-size: 0.9em;
+    color: var(--text-gray); /* Texto secundario */
+    margin-bottom: 5px;
+}
+
+/* -----------------------------------------------------------------------------
+   SECCIÓN: Grid de Contenido (2 columnas)
+   Propósito: Mostrar listados de pacientes y citas en paralelo
+   Estructura:
+     - Dos columnas de igual ancho
+     - Espaciado consistente
+------------------------------------------------------------------------------ */
+.sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Layout de 2 columnas */
+    gap: 20px;
+}
+
+/* Componente: Listados (Comparten estilos base)
+   - Pacientes recientes
+   - Próximas citas
+   Estilo común:
+     - Fondo de tarjeta con sombra
+     - Bordes redondeados
+     - Padding interno
+------------------------------------------------------------------------------ */
+.patient-list, .upcoming-appointments {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+/* Títulos de sección */
+.patient-list h2, .upcoming-appointments h2 {
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color); /* Línea divisoria */
+    padding-bottom: 10px;
+    color: var(--text-dark);
+}
+
+/* Listas sin estilos por defecto */
+.patient-list ul, .upcoming-appointments ul {
+    padding: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   COMPONENTE: Ítem de Paciente
+   Estructura:
+     - Disposición horizontal entre nombre y estado
+     - Borde inferior discontinuo para separación
+   Elementos:
+     - Ícono a la izquierda
+     - Información textual en columna
+------------------------------------------------------------------------------ */
+.patient-list ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color); /* Separador discontinuo */
+}
+
+/* Elimina borde del último elemento */
+.patient-list ul li:last-child {
+    border-bottom: none;
+}
+
+/* Contenedor de información del paciente */
+.patient-info {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Espacio entre ícono y texto */
+}
+
+/* Estilo de ícono */
+.patient-info i {
+    font-size: 30px;
+    color: var(--primary-blue); /* Color temático */
+}
+
+/* Texto destacado (nombre) */
+.patient-info strong {
+    display: block;
+    font-size: 1.1em;
+}
+
+/* Texto secundario (detalles) */
+.patient-info span {
+    font-size: 0.9em;
+    color: var(--text-gray); /* Color desaturado */
+}
+
+/* -----------------------------------------------------------------------------
+   COMPONENTE: Ítem de Cita
+   Estructura:
+     - Disposición vertical
+     - Elementos con márgenes controlados
+   Jerarquía visual:
+     - Hora como elemento principal
+     - Detalles en texto secundario
+------------------------------------------------------------------------------ */
+.upcoming-appointments ul li {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color); /* Separador discontinuo */
+}
+
+/* Elimina borde del último elemento */
+.upcoming-appointments ul li:last-child {
+    border-bottom: none;
+}
+
+/* Hora de la cita (elemento destacado) */
+.appointment-time {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: var(--primary-blue); /* Color primario */
+    margin-bottom: 5px; /* Separación con detalles */
+}
+
+/* Contenedor de detalles */
+.appointment-details strong {
+    display: block;
+    margin-bottom: 3px; /* Espaciado entre líneas */
+}
+
+/* Texto secundario */
+.appointment-details span {
+    font-size: 0.9em;
+    color: var(--text-gray); /* Color desaturado */
+}

@@ -1,0 +1,332 @@
+/* Variables actualizadas para consistencia */
+:root {
+  --med-card-border-radius: 8px;
+  --med-card-padding: 25px;
+  --med-icon-size: 1.1em;
+  --med-transition-speed: 0.3s;
+}
+
+/* Estructura principal mejorada */
+.medicamentos-section {
+  padding: 25px;
+  background-color: var(--card-bg);
+  border-radius: var(--med-card-border-radius);
+  box-shadow: var(--shadow);
+  margin-top: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header con efecto de acento */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--light-blue), transparent 70%);
+}
+
+.section-header h2 {
+  color: var(--primary-blue);
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.section-header p {
+  color: var(--text-gray);
+  font-size: 0.95em;
+  margin: 0;
+}
+
+.section-header i {
+  font-size: var(--med-icon-size);
+}
+
+/* Grid adaptable con fallback */
+.medicamentos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 20px;
+}
+
+/* Tarjeta de medicamento mejorada */
+.medicamento-card {
+  --border-accent: var(--secondary-blue);
+  
+  background-color: white;
+  border-radius: var(--med-card-border-radius);
+  padding: var(--med-card-padding);
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--border-accent);
+  transition: all var(--med-transition-speed) ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: inherit;
+}
+
+.medicamento-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.medicamento-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--border-accent);
+}
+
+/* Header de tarjeta */
+.medicamento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.medicamento-header h3 {
+  color: #2e64fe;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+  font-family: inherit;
+}
+
+.medicamento-fecha {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+/* Contenido de la tarjeta */
+.medicamento-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+}
+
+.detail-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.detail-label {
+  font-weight: bold;
+  color: var(--text-dark);
+  min-width: 100px;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.detail-value {
+  color: var(--text-dark);
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Indicaciones especiales */
+.medicamento-indicaciones {
+  background-color: rgba(var(--light-blue-rgb), 0.15);
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: auto;
+}
+
+.medicamento-indicaciones .detail-label {
+  color: var(--primary-blue);
+  margin-bottom: 8px;
+}
+
+/* Estados mejorados */
+.medicamento-status {
+  padding: 8px 12px;
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+/* Botón moderno */
+.btn-registro {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--secondary-blue);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--med-transition-speed) ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 1em;
+  font-family: inherit;
+}
+
+.btn-registro:hover {
+  background-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification-bell {
+    position: relative;
+    transition: all 0.3s;
+}
+.notification-bell.active {
+    color: #4CAF50;
+    animation: ring 0.5s ease-in-out 2;
+}
+@keyframes ring {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(15deg); }
+    50% { transform: rotate(-15deg); }
+    75% { transform: rotate(15deg); }
+    100% { transform: rotate(0deg); }
+}
+.notification-badge {
+    position: absolute;
+    top: -3px;
+    right: 8px;
+    background-color: var(--secundary-blue);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+
+/* Estado vacío mejorado */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-gray);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.empty-state i {
+  font-size: 2.5rem;
+  color: var(--light-blue);
+  opacity: 0.7;
+}
+
+.empty-state p {
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+/* Estilos para el botón de notificaciones */
+#toggle-notifications {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+}
+
+/* Estilos para los horarios */
+.detail-item .detail-label {
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+/* Responsive mejorado */
+@media (max-width: 1024px) {
+  .medicamentos-section {
+    padding: 20px;
+  }
+  
+  .medicamentos-grid {
+    gap: 15px;
+  }
+  
+  .medicamento-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .medicamentos-section {
+    padding: 15px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .medicamentos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Efectos de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .medicamento-card,
+  .btn-registro {
+    transition: none;
+  }
+}
+
+/* Modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .medicamento-card {
+    background-color: var(--dark-card-bg);
+    box-shadow: var(--dark-shadow-sm);
+  }
+  
+  .detail-label,
+  .detail-value {
+    color: var(--dark-text);
+  }
+  
+  .medicamento-indicaciones {
+    background-color: rgba(var(--light-blue-rgb), 0.1);
+  }
+}

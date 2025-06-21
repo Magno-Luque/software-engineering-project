@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Recursos Educativos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos adicionales para recursos */
+        .resources-container {
+            padding: 20px;
+        }
+        
+        .resources-section {
+            margin-bottom: 30px;
+        }
+        
+        .resources-section h1 {
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .resources-grid {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+        }
+        
+        .resource-card {
+            flex: 0 0 320px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        
+        .video-preview {
+            width: 100%;
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-preview iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .video-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 0, 0, 0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            background-color: rgba(255, 0, 0, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .play-button i {
+            color: white;
+            font-size: 24px;
+            margin-left: 5px;
+        }
+        
+        .resource-content {
+            padding: 20px;
+        }
+        
+        .resource-card h2 {
+            color: var(--secondary-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .resource-card h3 {
+            color: var(--secondary-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .resource-card p {
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .resource-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-gray);
+            font-size: 0.85em;
+            margin-bottom: 20px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .resource-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background-color: var(--secondary-blue);
+            color: var(--text-light);
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .resource-action:hover {
+            background-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .resource-card {
+                flex: 0 0 280px;
+            }
+            
+            .video-preview {
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_paciente.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                <div class="resources-container">
+                    <!-- Sección de Videos -->
+                    <div class="resources-section">
+                        <h1><i class="fas fa-video"></i> Videos Instructivos</h1>
+                        
+                        <div class="resources-grid">
+                            <!-- Video 1 - Diabetes -->
+                            <div class="resource-card">
+                                <div class="video-preview">
+                                    <img src="https://img.youtube.com/vi/10SjTF2Dp1E/mqdefault.jpg" alt="Vista previa del video">
+                                    <div class="play-button" onclick="openVideo('10SjTF2Dp1E')">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-syringe"></i> Manejo de Diabetes</h2>
+                                    <p>Aprenda estrategias prácticas para manejar sus niveles de glucosa.</p>
+                                    <div class="resource-meta">
+                                        <span>OMS</span>
+                                        <span>15 min</span>
+                                    </div>
+                                    <a href="https://www.youtube.com/watch?v=10SjTF2Dp1E" target="_blank" class="resource-action">
+                                        Ver completo <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Video 2 - Hipertensión -->
+                            <div class="resource-card">
+                                <div class="video-preview">
+                                    <img src="https://img.youtube.com/vi/KaBTbdzIyvA/mqdefault.jpg" alt="Vista previa del video">
+                                    <div class="play-button" onclick="openVideo('KaBTbdzIyvA')">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                                <div class="resource-content">
+                                    <h3><i class="fas fa-stethoscope"></i> Nueva Guía Hipertensión Arterial 2024</h3>
+                                    <p>Conozca las estrategias para reducir complicaciones y mejorar su calidad de vida.</p>
+                                    <div class="resource-meta">
+                                        <span>Sociedad Europea de Cardiología</span>
+                                        <span>12 min</span>
+                                    </div>
+                                    <a href="https://www.youtube.com/watch?v=KaBTbdzIyvA" target="_blank" class="resource-action">
+                                        Ver completo <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Video 3 - Ejercicio -->
+                            <div class="resource-card">
+                                <div class="video-preview">
+                                    <img src="https://img.youtube.com/vi/1aZBrq_XQPM/mqdefault.jpg" alt="Vista previa del video">
+                                    <div class="play-button" onclick="openVideo('1aZBrq_XQPM')">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                </div>
+                                <div class="resource-content">
+                                    <h3><i class="fas fa-heartbeat"></i> Prevención de Enfermedades Cardiovasculares</h3>
+                                    <p>Conozca hábitos saludables para mantener un corazón saludable y funcional</p>
+                                    <div class="resource-meta">
+                                        <span>Clínica Mayo</span>
+                                        <span>18 min</span>
+                                    </div>
+                                    <a href="https://www.youtube.com/watch?v=1aZBrq_XQPM" target="_blank" class="resource-action">
+                                        Ver completo <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de Artículos -->
+                    <div class="resources-section">
+                        <h1><i class="fas fa-file-alt"></i> Artículos Científicos</h1>
+                        
+                        <div class="resources-grid">
+                            <!-- Artículo 1 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-heartbeat" aria-hidden="true"></i> Diabetes</h2>
+                                    <p>Revisión de las últimas investigaciones sobre manejo glucémico y nuevos tratamientos.</p>
+                                    <div class="resource-meta">
+                                        <span><i class="fas fa-book" aria-hidden="true"></i> Revista Médica PubMed</span>
+                                    </div>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/?term=diabetes" 
+                                    class="resource-action" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    aria-label="Leer artículos sobre diabetes en PubMed (se abre en nueva ventana)">
+                                        <i class="fas fa-external-link-alt" aria-hidden="true"></i> Ver estudios
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Artículo 2 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-heartbeat" aria-hidden="true"></i> Hipertensión</h2>
+                                    <p>Guías actualizadas sobre diagnóstico, manejo terapéutico y enfoques innovadores en hipertensión arterial.</p>
+                                    <div class="resource-meta">
+                                        <span><i class="fas fa-book" aria-hidden="true"></i> Revista Médica PubMed</span>
+                                    </div>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/?term=hypertension" 
+                                    class="resource-action" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    aria-label="Leer artículos sobre hipertensión en PubMed (se abre en nueva ventana)">
+                                        <i class="fas fa-external-link-alt" aria-hidden="true"></i> Ver guías clínicas
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Artículo 3 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h3><i class="fas fa-heart-pulse" aria-hidden="true"></i> Enfermedades Cardiovasculares</h3>
+                                    <p>Revisión integral de estrategias preventivas, manejo clínico y avances terapéuticos en cardiología.</p>
+                                    <div class="resource-meta">
+                                        <span><i class="fas fa-book" aria-hidden="true"></i> Revista Médica PubMed</span>
+                                    </div>
+                                    <a href="https://pubmed.ncbi.nlm.nih.gov/?term=cardiovascular+diseases+AND+(review[ptyp]+OR+guideline[ptyp])" 
+                                    class="resource-action" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    aria-label="Acceder a revisiones sobre enfermedades cardiovasculares en PubMed (se abre en nueva ventana)">
+                                        <i class="fas fa-external-link-alt" aria-hidden="true"></i> Ver revisiones sistemáticas
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de Guías -->
+                    <div class="resources-section">
+                        <h1><i class="fas fa-book-open"></i> Guías Prácticas</h1>
+                        
+                        <div class="resources-grid">
+                            <!-- Guía 1 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-file-pdf" aria-hidden="true"></i> Medición Precisa</h2>
+                                    <p class="resource-description">Guía clínica paso a paso para medición precisa de presión arterial según protocolos OMS.</p>
+                                    
+                                    <div class="resource-meta">
+                                        <span><i class="fas fa-file-alt" aria-hidden="true"></i> PDF</span>
+                                        <span><i class="fas fa-file-invoice" aria-hidden="true"></i> 3 páginas</span>
+                                        <span><i class="fas fa-ruler-combined" aria-hidden="true"></i> Versión 2.1</span>
+                                    </div>
+                                    
+                                    <a href="/MiControlApp/static/doc/guiaPresionArterial.pdf" 
+                                    class="resource-action download-btn"
+                                    download="guiaPresionArterial.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Descargar guía de medición de presión arterial (PDF, 3 páginas)">
+                                        <i class="fas fa-download" aria-hidden="true"></i> Descargar guía
+                                    </a>
+                                    
+                                    <div class="resource-footer">
+                                        <small><i class="fas fa-info-circle" aria-hidden="true"></i> Actualizado: Mayo 2024 | Tamaño: 1.2MB</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Guía 2 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-file-excel"></i> Registro Biométrico</h2>
+                                    <p>Plantilla para llevar un control sistemático de sus mediciones y valores.</p>
+                                    <div class="resource-meta">
+                                        <span>Excel</span>
+                                        <span>Plantilla</span>
+                                    </div>
+                                    <a href="#" class="resource-action">
+                                        Descargar <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Guía 3 -->
+                            <div class="resource-card">
+                                <div class="resource-content">
+                                    <h2><i class="fas fa-utensils"></i> Plan Nutricional</h2>
+                                    <p>Guía completa de alimentación para pacientes con condiciones metabólicas.</p>
+                                    <div class="resource-meta">
+                                        <span>PDF</span>
+                                        <span>15 páginas</span>
+                                    </div>
+                                    <a href="#" class="resource-action">
+                                        Descargar <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para abrir video en modal o nueva pestaña
+        function openVideo(videoId) {
+            // Puedes implementar un modal aquí si lo prefieres
+            window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+        }
+        
+        // Opcional: Cargar miniaturas dinámicamente
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoPreviews = document.querySelectorAll('.video-preview img');
+            
+            // Reemplazar con tus IDs de video reales
+            const videoIds = ['10SjTF2Dp1E', 'KaBTbdzIyvA', '1aZBrq_XQPM'];
+            
+            videoPreviews.forEach((img, index) => {
+                if(videoIds[index]) {
+                    img.src = `https://img.youtube.com/vi/${videoIds[index]}/mqdefault.jpg`;
+                    img.alt = `Vista previa del video ${videoIds[index]}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

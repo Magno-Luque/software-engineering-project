@@ -1,0 +1,63 @@
+<!-- templates/shared/sidebar_paciente.html -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/Logo-encabezado-barra-lateral.png') }}" alt="MiControl Logo" class="sidebar-logo">
+        <span class="menu-toggle-icon"></span>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li class="{{ 'active' if request.path == '/paciente/dashboard' else '' }}">
+                <a href="{{ url_for('paciente_dashboard') }}">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/medicamentos' else '' }}">
+                <a href="{{ url_for('paciente_medicamentos') }}">
+                    <i class="fas fa-pills"></i> Medicamentos
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/datos_biometricos' else '' }}">
+                <a href="{{ url_for('paciente_datos_biometricos') }}">
+                    <i class="fas fa-heart-pulse"></i> Triaje
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/alertas_criticas' else '' }}">
+                <a href="{{ url_for('paciente_alertas_criticas') }}">
+                    <i class="fas fa-star-of-life"></i> Alertas Críticas
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/actividadFisica' else '' }}">
+                <a href="{{ url_for('paciente_actividad_fisica') }}">
+                    <i class="fas fa-dumbbell"></i> Dieta y Actividad Física
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/cita' else '' }}">
+                <a href="{{ url_for('paciente_cita') }}">
+                    <i class="fas fa-calendar-check"></i> Cita
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/educacion_en_salud' else '' }}">
+                <a href="{{ url_for('paciente_educacion_en_salud') }}">
+                    <i class="fas fa-book-medical"></i> Educación en Salud
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paciente/foro' else '' }}">
+                <a href="{{ url_for('paciente_foro') }}">
+                    <i class="fas fa-people-arrows"></i> Foro
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <i class="fas fa-user-md"></i>
+            <div>
+                <span class="user-role">Paciente</span>
+                <span class="user-clinic"></span>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-link">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </div>
+</div>

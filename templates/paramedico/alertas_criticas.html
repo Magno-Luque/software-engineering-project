@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Alertas Críticas (Paramédico)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/alertas-paramedico.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_paramedico.html' %}
+
+        <div class="main-content">
+            <div class="alertas-container">  
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="alertas-section">
+                    {% if alertas %}
+                        {% for alerta in alertas %}
+                        <div class="alerta-card">
+                            <div class="paciente-info">
+                                <h2>{{ alerta.nombre_completo }}</h2>
+                                <div class="dni-fecha-container"> <!-- Nuevo contenedor -->
+                                    <p class="dni">DNI: {{ alerta.dni }}</p>
+                                    <span class="alerta-fecha">{{ alerta.fecha.strftime('%d/%m/%Y, %I:%M:%S %p') }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="alerta-content">
+                                {% if alerta.glucosa is not none %}
+                                <div class="alerta-detalle">
+                                    <h3>Glucosa Crítica</h3>
+                                    <p class="valor-alerta">Valor: <strong>{{ alerta.glucosa }} mg/dL</strong></p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if alerta.sistolica is not none or alerta.diastolica is not none %}
+                                <div class="alerta-detalle">
+                                    <h3>Presión Arterial Elevada</h3>
+                                    <p class="valor-alerta">Valor: <strong>
+                                        {% if alerta.sistolica is not none and alerta.diastolica is not none %}
+                                            {{ alerta.sistolica }}/{{ alerta.diastolica }} mmHg
+                                        {% elif alerta.sistolica is not none %}
+                                            {{ alerta.sistolica }} mmHg (sistólica)
+                                        {% elif alerta.diastolica is not none %}
+                                            {{ alerta.diastolica }} mmHg (diastólica)
+                                        {% endif %}
+                                    </strong></p>
+                                </div>
+                                {% endif %}
+                                
+                                {% if alerta.frecuencia_cardiaca is not none %}
+                                <div class="alerta-detalle">
+                                    <h3>Frecuencia Cardíaca Anormal</h3>
+                                    <p class="valor-alerta">Valor: <strong>{{ alerta.frecuencia_cardiaca }} lpm</strong></p>
+                                </div>
+                                {% endif %}
+
+                                {% if alerta.informacion %}
+                                    <div class="alerta-info">
+                                        <span class="detail-label">Diagnóstico preliminar:</span>
+                                        <div class="diagnostico-list">
+                                            {% for punto in alerta.informacion.split('.') %}
+                                                {% if punto.strip() %}
+                                                    <div class="diagnostico-punto">{{ punto.strip() }}.</div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if alerta.nota %}
+                                <div class="alerta-nota">
+                                    <p><strong>Nota:</strong> {{ alerta.nota }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- <div class="alerta-footer">
+                                    <p class="fecha-alerta">{{ alerta.fecha.strftime('%d/%m/%Y, %I:%M:%S %p') }}</p>
+                                </div> -->
+                            </div>
+                            
+                            <div class="alerta-acciones">
+                                <form action="{{ url_for('paramedico.alertas') }}" method="post">
+                                    <input type="hidden" name="alerta_id" value="{{ alerta.id }}">
+                                    <button type="submit" name="accion" value="emergencia" class="btn-emergencia">
+                                        <i class="fas fa-ambulance"></i> Emergencia
+                                    </button>
+                                    <button type="submit" name="accion" value="resolver" class="btn-resolver">
+                                        <i class="fas fa-check-circle"></i> Resolver
+                                    </button>
+                                    <button type="button" class="btn-nota" onclick="mostrarModalNota('{{ alerta.id }}')">
+                                        <i class="fas fa-edit"></i> Nota
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No hay alertas críticas pendientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para agregar nota -->
+    <div id="modalNota" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModalNota()">&times;</span>
+            <h3>Agregar Nota a la Alerta</h3>
+            <form id="formNota" action="{{ url_for('paramedico.agregar_nota_alerta') }}" method="post">
+                <input type="hidden" id="alertaIdNota" name="alerta_id">
+                <textarea name="nota" rows="4" placeholder="Escribe aquí tu nota..."></textarea>
+                <button type="submit" class="btn-guardar">Guardar Nota</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function mostrarModalNota(alertaId) {
+            document.getElementById('alertaIdNota').value = alertaId;
+            document.getElementById('modalNota').style.display = 'block';
+        }
+        
+        function cerrarModalNota() {
+            document.getElementById('modalNota').style.display = 'none';
+        }
+        
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalNota');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

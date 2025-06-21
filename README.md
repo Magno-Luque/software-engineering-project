@@ -2,5 +2,3 @@
 
 
 Proyecto de fin de curso - Ingeniería de Software.
-
-E

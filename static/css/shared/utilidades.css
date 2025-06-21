@@ -1,0 +1,105 @@
+/* static/css/shared/utilidades.css */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--light-blue);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: var(--secondary-blue);
+}
+
+.stat-change {
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.stat-change.positive {
+    color: var(--positive-change);
+}
+
+.stat-change.negative {
+    color: var(--negative-change);
+}
+
+.stat-change.neutral {
+    color: var(--text-gray);
+}
+
+/*----*/
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-light);
+}
+/*----*/
+
+/*admin-dashboard*/
+/*----*/
+
+
+.status.active {
+    background-color: var(--active-status);
+}
+
+.status.inactive {
+    background-color: var(--inactive-status);
+}
+
+
+.status.pending {
+    background-color: var(--pending-status);
+}
+
+.status.attended {
+    background-color: var(--attended-status);
+}
+
+.status.low {
+    background-color: var(--low-criticality);
+}
+
+.status.medium {
+    background-color: var(--medium-criticality);
+}
+
+.status.high {
+    background-color: var(--high-criticality);
+}
+
+
+/*----*/
+
+
+
+.btn { 
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--secondary-blue);
+    color: var(--text-light);
+    border: none;
+}
+
+.btn-primary:hover {  
+    background-color: #2554d1; /* Un tono más oscuro */
+}
+
+/* Otros utilitarios que se irán agregando */

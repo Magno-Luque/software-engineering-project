@@ -1,0 +1,131 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- METADATOS PRINCIPALES -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Dashboard Admin</title>
+    
+    <!-- HOJAS DE ESTILO -->
+    <!-- Estilos base/reset -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <!-- Variables CSS globales -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <!-- Estilos base de la aplicación -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <!-- Clases utilitarias (helpers) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilidades.css') }}">
+    <!-- Layout específico para escritorio -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <!-- Estilos específicos del dashboard -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-dashboard.css') }}">
+    <!-- Librería de íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- LAYOUT PRINCIPAL: Escritorio -->
+    <div class="desktop-layout">
+        
+        <!-- BARRA LATERAL: Navegación principal -->
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-content">
+            <!-- SECCIÓN: Dashboard -->
+            <div class="dashboard-container">
+                <!-- Título de página -->
+                <h1>Inicio</h1>
+                
+                <!-- GRID: Estadísticas principales (KPI) -->
+                <div class="stats-grid">
+                    <!-- Tarjeta: Total Pacientes -->
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ resumen_info.total_pacientes }}</span>
+                            <span class="stat-label">Total Pacientes</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tarjeta: Profesionales -->
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-user-md"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ resumen_info.total_profesionales }}</span>
+                            <span class="stat-label">Profesionales</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tarjeta: Citas Hoy -->
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ resumen_info.total_citas_hoy }}</span>
+                            <span class="stat-label">Citas Hoy</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Tarjeta: Alertas Críticas -->
+                    <div class="stat-card">
+                        <div class="icon-circle"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number">{{ resumen_info.total_alertas_criticas }}</span>
+                            <span class="stat-label">Alertas Críticas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRID: Secciones de contenido (2 columnas) -->
+                <div class="sections-grid">
+                    <!-- COLUMNA 1: Listado de pacientes recientes -->
+                    <div class="card patient-list">
+                        <h2>Pacientes Recientes</h2>
+                        <ul>
+                            {% for paciente in pacientes_recientes %}
+                            <li>
+                                <div class="patient-info">
+                                    <i class="fas fa-user-circle"></i>
+                                    <div>
+                                        <!-- Nombre completo del paciente -->
+                                        <strong>{{ paciente['nombres'] }} {{ paciente['apellidos'] }}</strong>
+                                        <!-- DNI identificador -->
+                                        <span>DNI: {{ paciente['dni'] }}</span> 
+                                    </div>
+                                </div>
+                                <!-- Estado con clase para estilizado dinámico -->
+                                <span class="estado">{{ paciente['estado']}}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- COLUMNA 2: Próximas citas -->
+                    <div class="card upcoming-appointments">
+                        <h2>Próximas Citas</h2>
+                        <ul>
+                            {% for cita in citas_de_hoy %}
+                            <li>
+                                <!-- Hora destacada de la cita -->
+                                <div class="appointment-time">{{ cita['horario_completo'] }}</div>
+                                <div class="appointment-details">
+                                    <!-- Nombre del paciente -->
+                                    <strong>{{ cita['paciente_nombres'] }} {{ cita['paciente_apellidos'] }}</strong>
+                                    <!-- Detalles: fecha + médico + especialidad -->
+                                    <span>{{ cita['fecha_cita'] }} Dr./Dra. {{ cita['nombre_formal'] }} - {{ cita['especialidad'] }}</span>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS GLOBALES -->
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <!-- Script específico del dashboard -->
+    <script src="{{ url_for('static', filename='js/desktop/admin-dashboard.js') }}"></script>
+</body>
+</html>

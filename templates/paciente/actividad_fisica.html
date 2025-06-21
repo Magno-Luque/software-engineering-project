@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Dieta y Actividad Física</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dieta_actividad.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_paciente.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                <h1>Registro de Dieta y Actividad Física</h1>
+                
+                <div class="diet-activity-container">
+                    <!-- Paso 1: Formulario de Dieta -->
+                    <form id="dietForm" class="diet-form active-step" method="POST" action="{{ url_for('infoadicional.informacion_adicional') }}">
+                        <div class="form-header">
+                            <h2><i class="fas fa-utensils"></i> Registro de Alimentación</h2>
+                            <p>Completa los detalles de tu alimentación diaria</p>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <!-- Desayuno -->
+                            <div class="meal-section">
+                                <h3 class="meal-title"><i class="fas fa-sun"></i> Desayuno</h3>
+                                <div class="form-group">
+                                    <label for="desayuno_comida">Comida</label>
+                                    <input type="text" id="desayuno_comida" name="desayuno_comida" placeholder="Ej: Avena con frutas" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="desayuno_porcion">Porción</label>
+                                    <input type="text" id="desayuno_porcion" name="desayuno_porcion" placeholder="Ej: 1 taza" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="desayuno_notas">Notas adicionales</label>
+                                    <textarea id="desayuno_notas" name="desayuno_notas" placeholder="Ej: Sin azúcar añadida"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Almuerzo -->
+                            <div class="meal-section">
+                                <h3 class="meal-title"><i class="fas fa-cloud-sun"></i> Almuerzo</h3>
+                                <div class="form-group">
+                                    <label for="almuerzo_comida">Comida</label>
+                                    <input type="text" id="almuerzo_comida" name="almuerzo_comida" placeholder="Ej: Pechuga de pollo con arroz" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="almuerzo_porcion">Porción</label>
+                                    <input type="text" id="almuerzo_porcion" name="almuerzo_porcion" placeholder="Ej: 1 filete mediano, 1/2 taza de arroz" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="almuerzo_notas">Notas adicionales</label>
+                                    <textarea id="almuerzo_notas" name="almuerzo_notas" placeholder="Ej: Arroz integral, vegetales al vapor"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Cena -->
+                            <div class="meal-section">
+                                <h3 class="meal-title"><i class="fas fa-moon"></i> Cena</h3>
+                                <div class="form-group">
+                                    <label for="cena_comida">Comida</label>
+                                    <input type="text" id="cena_comida" name="cena_comida" placeholder="Ej: Sopa de pollo con fideos" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cena_porcion">Porción</label>
+                                    <input type="text" id="cena_porcion" name="cena_porcion" placeholder="Ej: 1 tazón grande, 50g de fideos" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cena_notas">Notas adicionales</label>
+                                    <textarea id="cena_notas" name="cena_notas" placeholder="Ej: Con bastantes verduras, sin piel de pollo"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-next" id="btnNextDiet">
+                                Siguiente <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Paso 2: Formulario de Actividad Física -->
+                    <form id="activityForm" class="activity-form" style="display: none;" method="POST" action="{{ url_for('infoadicional.informacion_adicional') }}">
+                        <div class="form-header">
+                            <h2><i class="fas fa-running"></i> Registro de Actividad Física</h2>
+                            <p>Detalla tu rutina de ejercicios del día</p>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="tipo_actividad">Tipo de Actividad</label>
+                                <select id="tipo_actividad" name="tipo_actividad" required>
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="Caminata">Caminata</option>
+                                    <option value="Correr">Correr</option>
+                                    <option value="Natación">Natación</option>
+                                    <option value="Ciclismo">Ciclismo</option>
+                                    <option value="Gimnasio">Gimnasio</option>
+                                    <option value="Yoga">Yoga</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="intensidad">Intensidad</label>
+                                <select id="intensidad" name="intensidad" required>
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="Baja">Baja</option>
+                                    <option value="Moderada">Moderada</option>
+                                    <option value="Alta">Alta</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tiempo">Tiempo (minutos)</label>
+                                <input type="number" id="tiempo" name="tiempo" min="1" max="300" required>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="notas_actividad">Notas adicionales</label>
+                                <textarea id="notas_actividad" name="notas_actividad" placeholder="Ej: Realizado en parque, sensación posterior"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="btnBackActivity">
+                                <i class="fas fa-arrow-left"></i> Anterior
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Todo
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Información Nutricional -->
+                    <div class="nutrition-info">
+                        <h3><i class="fas fa-info-circle"></i> Recomendaciones</h3>
+                        <div class="info-cards">
+                            <div class="info-card">
+                                <h4>Desayuno</h4>
+                                <p>Incluye proteínas, granos enteros y frutas. Ejemplo: Avena con nueces y plátano.</p>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h4>Almuerzo</h4>
+                                <p>Balance de proteínas magras, carbohidratos complejos y vegetales. Ejemplo: Pollo con quinoa y ensalada.</p>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h4>Cena</h4>
+                                <p>Ligera con proteínas y vegetales. Ejemplo: Sopa de verduras con pescado.</p>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h4>Actividad Física</h4>
+                                <p>Recomendado: 150 minutos semanales de actividad moderada o 75 minutos de actividad intensa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/shared/dieta_actividad.js') }}"></script>
+</body>
+</html>

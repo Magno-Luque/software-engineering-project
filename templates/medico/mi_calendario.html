@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Mi Calendario</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/medico.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_medico.html' %}
+
+        <div class="main-content">
+            <div class="navbar-desktop">
+            
+                <div class="navbar-right">
+                    <div class="calendario-controles">
+                        <button class="btn-calendario" onclick="cambiarVista('semanal')" id="btn-semanal">
+                            <i class="fas fa-calendar-week"></i> Semanal
+                        </button>
+                        <button class="btn-calendario active" onclick="cambiarVista('mensual')" id="btn-mensual">
+                            <i class="fas fa-calendar"></i> Mensual
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-container">
+
+                <!-- Controles del calendario -->
+                <div class="calendario-header-controles">
+                    <div class="navegacion-mes">
+                        <button class="btn-nav" onclick="cambiarMes(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2 id="mes-actual">Mayo 2024</h2>
+                        <button class="btn-nav" onclick="cambiarMes(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="calendario-acciones">
+                        <button class="btn btn-primary" onclick="nuevaCita()">
+                            <i class="fas fa-plus"></i> Nueva Cita
+                        </button>
+                        <button class="btn" onclick="hoy()">
+                            <i class="fas fa-calendar-day"></i> Hoy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leyenda de tipos de cita -->
+                <div class="calendario-leyenda">
+                    <div class="leyenda-item">
+                        <span class="color-indicator presencial"></span>
+                        <span>Presencial</span>
+                    </div>
+                    <div class="leyenda-item">
+                        <span class="color-indicator virtual"></span>
+                        <span>Virtual (Zoom)</span>
+                    </div>
+                    <div class="leyenda-item">
+                        <span class="color-indicator urgente"></span>
+                        <span>Urgente</span>
+                    </div>
+                    <div class="leyenda-item">
+                        <span class="color-indicator bloqueado"></span>
+                        <span>No disponible</span>
+                    </div>
+                </div>
+
+                <!-- Vista Mensual (por defecto) -->
+                <div id="vista-mensual" class="calendario-vista">
+                    <div class="calendario-container">
+                        <div class="calendario-grid-header">
+                            <div class="dia-header">Lunes</div>
+                            <div class="dia-header">Martes</div>
+                            <div class="dia-header">Miércoles</div>
+                            <div class="dia-header">Jueves</div>
+                            <div class="dia-header">Viernes</div>
+                            <div class="dia-header">Sábado</div>
+                            <div class="dia-header">Domingo</div>
+                        </div>
+                        
+                        <div class="calendario-grid" id="calendario-grid">
+                            <!-- Los días se generan dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vista Semanal -->
+                <div id="vista-semanal" class="calendario-vista" style="display: none;">
+                    <div class="calendario-semanal">
+                        <div class="semanal-header">
+                            <div class="hora-header">Hora</div>
+                            <div class="dia-semanal-header">Lun 27</div>
+                            <div class="dia-semanal-header">Mar 28</div>
+                            <div class="dia-semanal-header">Mié 29</div>
+                            <div class="dia-semanal-header">Jue 30</div>
+                            <div class="dia-semanal-header">Vie 31</div>
+                            <div class="dia-semanal-header">Sáb 1</div>
+                            <div class="dia-semanal-header">Dom 2</div>
+                        </div>
+                        
+                        <div class="semanal-grid" id="semanal-grid">
+                            <!-- Las horas y citas se generan dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel lateral con detalles del día seleccionado -->
+                <div class="calendario-sidebar">
+                    <div class="card">
+                        <h3 id="dia-seleccionado">Hoy, 31 de Mayo</h3>
+                        <div class="citas-del-dia" id="citas-del-dia">
+                            <div class="cita-item presencial">
+                                <div class="cita-hora">10:00</div>
+                                <div class="cita-detalles">
+                                    <div class="cita-paciente">Juan Pérez García</div>
+                                    <div class="cita-tipo">Consulta Cardiológica</div>
+                                    <div class="cita-estado urgente">⚠️ Paciente con alerta crítica</div>
+                                </div>
+                                <div class="cita-acciones">
+                                    <button class="btn-cita-accion" onclick="verDetallesCita('cita-001')" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-cita-accion" onclick="reprogramarCita('cita-001')" title="Reprogramar">
+                                        <i class="fas fa-clock"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cita-item virtual">
+                                <div class="cita-hora">11:30</div>
+                                <div class="cita-detalles">
+                                    <div class="cita-paciente">María Elena González</div>
+                                    <div class="cita-tipo">Seguimiento Diabetes</div>
+                                    <div class="cita-estado virtual">💻 Enlace Zoom disponible</div>
+                                </div>
+                                <div class="cita-acciones">
+                                    <button class="btn-cita-accion btn-zoom" onclick="abrirZoom('zoom-link-123')" title="Iniciar Zoom">
+                                        <i class="fas fa-video"></i>
+                                    </button>
+                                    <button class="btn-cita-accion" onclick="verDetallesCita('cita-002')" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cita-item presencial">
+                                <div class="cita-hora">14:00</div>
+                                <div class="cita-detalles">
+                                    <div class="cita-paciente">Carlos Alberto Rodríguez</div>
+                                    <div class="cita-tipo">Control Hipertensión</div>
+                                    <div class="cita-estado normal">✅ Paciente estable</div>
+                                </div>
+                                <div class="cita-acciones">
+                                    <button class="btn-cita-accion" onclick="verDetallesCita('cita-003')" title="Ver detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-cita-accion" onclick="reprogramarCita('cita-003')" title="Reprogramar">
+                                        <i class="fas fa-clock"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="horario-libre">
+                                <div class="horario-disponible">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>15:30 - 16:00 Disponible</span>
+                                    <button class="btn-agendar" onclick="agendarEnHorario('15:30')">Agendar</button>
+                                </div>
+                                <div class="horario-disponible">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>16:30 - 17:00 Disponible</span>
+                                    <button class="btn-agendar" onclick="agendarEnHorario('16:30')">Agendar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen del día -->
+                        <div class="resumen-dia">
+                            <h4>Resumen del Día</h4>
+                            <div class="resumen-stats">
+                                <div class="stat-mini">
+                                    <span class="numero">3</span>
+                                    <span class="label">Citas programadas</span>
+                                </div>
+                                <div class="stat-mini">
+                                    <span class="numero">2h</span>
+                                    <span class="label">Tiempo libre</span>
+                                </div>
+                                <div class="stat-mini">
+                                    <span class="numero">1</span>
+                                    <span class="label">Alerta crítica</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Nueva Cita -->
+    <div id="modal-nueva-cita" class="modal-overlay" style="display: none;">
+        <div class="modal-content nueva-cita-modal">
+            <div class="modal-header">
+                <h3 class="titulo-blanco">Nueva Cita Médica</h3>
+                <button class="modal-close" onclick="cerrarModalCita()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-nueva-cita">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cita-paciente">Paciente</label>
+                            <select id="cita-paciente" required>
+                                <option value="">Seleccionar paciente</option>
+                                <option value="001">Juan Pérez García</option>
+                                <option value="002">María Elena González</option>
+                                <option value="003">Carlos Alberto Rodríguez</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cita-tipo">Tipo de Consulta</label>
+                            <select id="cita-tipo" required>
+                                <option value="">Seleccionar tipo</option>
+                                <option value="consulta">Consulta General</option>
+                                <option value="seguimiento">Seguimiento</option>
+                                <option value="emergencia">Emergencia</option>
+                                <option value="control">Control</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cita-fecha">Fecha</label>
+                            <input type="date" id="cita-fecha" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cita-hora">Hora</label>
+                            <select id="cita-hora" required>
+                                <option value="">Seleccionar hora</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cita-modalidad">Modalidad</label>
+                            <select id="cita-modalidad" required>
+                                <option value="presencial">Presencial</option>
+                                <option value="virtual">Virtual (Zoom)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cita-duracion">Duración</label>
+                            <select id="cita-duracion" required>
+                                <option value="30">30 minutos</option>
+                                <option value="45">45 minutos</option>
+                                <option value="60">60 minutos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cita-notas">Notas (opcional)</label>
+                        <textarea id="cita-notas" rows="3" placeholder="Observaciones o preparación especial..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" onclick="cerrarModalCita()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" onclick="guardarCita()">
+                    <i class="fas fa-save"></i> Guardar Cita
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalles de Cita -->
+    <div id="modal-detalle-cita" class="modal-overlay" style="display: none;">
+        <div class="modal-content detalle-cita-modal">
+            <div class="modal-header">
+                <h3 id="detalle-titulo">Detalles de la Cita</h3>
+                <button class="modal-close" onclick="cerrarDetallesCita()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="detalle-cita-info" id="detalle-cita-info">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="cerrarDetallesCita()">Cerrar</button>
+                <button class="btn btn-primary" onclick="editarCita()">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/medico-calendario.js') }}"></script>
+</body>
+</html>

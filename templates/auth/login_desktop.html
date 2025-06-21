@@ -1,0 +1,297 @@
+<!-- templates/auth/login_desktop.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Acceso Profesional</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../../static/css/shared/variables.css">
+    <link rel="stylesheet" href="../../static/css/shared/base.css">
+    <link rel="stylesheet" href="../../static/css/desktop/desktop-layout.css">
+    <link rel="stylesheet" href="../../static/css/components/auth.css">
+    <link rel="stylesheet" href="../../static/css/desktop/desktop-auth.css">
+    <link rel="stylesheet" href="../../static/css/responsive/breakpoints.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="../../static/images/logo/favicon.ico">
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="../../static/images/logo/logo.png" as="image">
+    <link rel="preload" href="../../static/fonts/inter/inter-regular.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body class="desktop-auth-body">
+    
+    <!-- Skip Link para accesibilidad -->
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    
+    <!-- Contenedor principal desktop -->
+    <div class="desktop-auth-container" id="main-content">
+        
+        <!-- Área central de login -->
+        <div class="desktop-auth-card">
+            
+            <!-- Logo y branding -->
+            <div class="desktop-branding-section">
+                <div class="desktop-logo-container">
+                    <img src="../../static/images/logo/logo.png" 
+                         alt="MiControl Logo" 
+                         class="desktop-logo">
+                </div>
+                
+                <div class="desktop-brand-info">
+                    <h1 class="desktop-brand-title">MiControl</h1>
+                    <p class="desktop-brand-subtitle">la salud, nuestra prioridad</p>
+                </div>
+            </div>
+            
+            <!-- Formulario de login -->
+            <div class="desktop-form-section">
+                
+                <!-- Avatar del usuario profesional -->
+                <div class="professional-avatar">
+                    <div class="avatar-circle">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Título del formulario -->
+                <div class="form-header">
+                    <h2 class="form-title">Acceso Profesional</h2>
+                    <p class="form-subtitle">Ingrese sus credenciales institucionales</p>
+                </div>
+                
+                <!-- Alertas del sistema -->
+                <div id="desktop-auth-alerts" class="desktop-alerts" style="display: none;">
+                    <!-- Las alertas se insertan dinámicamente -->
+                </div>
+                
+                <!-- Formulario -->
+                <form id="desktopLoginForm" class="desktop-auth-form" novalidate>
+                    
+                    <!-- Campo Usuario -->
+                    <div class="desktop-form-group">
+                        <label for="desktop-usuario" class="desktop-form-label">
+                            Usuario
+                        </label>
+                        <div class="desktop-input-wrapper">
+                            <input type="text" 
+                                   id="desktop-usuario" 
+                                   name="usuario" 
+                                   class="desktop-form-input" 
+                                   placeholder="Ingrese su usuario"
+                                   required
+                                   autocomplete="username"
+                                   aria-describedby="usuario-error">
+                        </div>
+                        <div id="usuario-error" class="desktop-field-error" role="alert"></div>
+                    </div>
+                    
+                    <!-- Campo Contraseña -->
+                    <div class="desktop-form-group">
+                        <label for="desktop-password" class="desktop-form-label">
+                            Contraseña
+                        </label>
+                        <div class="desktop-input-wrapper">
+                            <input type="password" 
+                                   id="desktop-password" 
+                                   name="password" 
+                                   class="desktop-form-input" 
+                                   placeholder="Ingrese su contraseña"
+                                   required
+                                   autocomplete="current-password"
+                                   aria-describedby="password-error">
+                            <button type="button" 
+                                    class="desktop-input-toggle" 
+                                    id="desktopTogglePassword"
+                                    aria-label="Mostrar contraseña">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="password-error" class="desktop-field-error" role="alert"></div>
+                    </div>
+                    
+                    <!-- Botón de inicio de sesión -->
+                    <button type="submit" class="desktop-submit-btn" id="desktopLoginButton">
+                        <span class="btn-text">Iniciar sesión</span>
+                        <div class="btn-loading" style="display: none;">
+                            <div class="desktop-loading-spinner"></div>
+                            <span>Verificando...</span>
+                        </div>
+                    </button>
+                </form>
+                
+                <!-- Enlaces adicionales -->
+                <div class="desktop-form-footer">
+                    <a href="#" class="desktop-forgot-link" id="desktopForgotLink">
+                        ¿Has olvidado tu contraseña?
+                    </a>
+                </div>
+                
+                <!-- Información de contacto -->
+                <div class="desktop-contact-info">
+                    <p class="contact-text">
+                        ¿Problemas con el acceso? 
+                        <a href="tel:+51-1-234-5678" class="contact-link">
+                            Contacte con soporte técnico
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información adicional del sistema -->
+        <div class="desktop-system-info">
+            <div class="system-info-card">
+                <h3 class="system-info-title">Sistema MiControl</h3>
+                <ul class="system-features">
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                        Gestión integral de pacientes crónicos
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                        Monitoreo en tiempo real
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                        Comunicación médico-paciente
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                        Reportes y analytics avanzados
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Versión del sistema -->
+            <div class="system-version">
+                <p class="version-text">
+                    Versión 2.1.0 | 
+                    <a href="#" class="version-link">Notas de la versión</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de recuperación de contraseña -->
+    <div id="desktopForgotModal" class="desktop-modal" style="display: none;">
+        <div class="desktop-modal-overlay"></div>
+        <div class="desktop-modal-content">
+            <div class="desktop-modal-header">
+                <h3 class="desktop-modal-title">Recuperar Contraseña</h3>
+                <button type="button" class="desktop-modal-close" id="closeDesktopForgotModal" aria-label="Cerrar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="desktopForgotForm" class="desktop-modal-body">
+                <p class="modal-description">
+                    Ingrese su nombre de usuario institucional y se enviará un enlace 
+                    de recuperación a su correo corporativo registrado.
+                </p>
+                
+                <div class="desktop-form-group">
+                    <label for="forgot-usuario" class="desktop-form-label">
+                        Usuario Institucional
+                    </label>
+                    <input type="text" 
+                           id="forgot-usuario" 
+                           name="forgot-usuario" 
+                           class="desktop-form-input" 
+                           placeholder="Ejemplo: dr.garcia"
+                           required>
+                </div>
+                
+                <div class="desktop-modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelDesktopForgot">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Enviar Enlace
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Loading overlay global -->
+    <div id="desktopGlobalLoading" class="desktop-loading-overlay" style="display: none;">
+        <div class="desktop-loading-content">
+            <div class="desktop-loading-spinner-large"></div>
+            <p class="desktop-loading-text">Verificando credenciales...</p>
+            <p class="desktop-loading-subtext">Por favor espere</p>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="../../static/js/shared/utils.js"></script>
+    <script src="../../static/js/shared/api.js"></script>
+    <script src="../../static/js/desktop/desktop-auth.js"></script>
+    <script>
+        // Configuración específica para desktop
+        const DesktopAuthConfig = {
+            apiEndpoints: {
+                login: '/api/auth/desktop-login',
+                forgotPassword: '/api/auth/forgot-password-professional',
+                checkSession: '/api/auth/check-professional-session'
+            },
+            maxAttempts: 3,
+            lockoutTime: 10 * 60 * 1000, // 10 minutos para profesionales
+            redirectUrls: {
+                'admin': '/admin/dashboard',
+                'medico': '/medico/dashboard', 
+                'psicologo': '/psicologo/dashboard'
+            }
+        };
+
+        // Inicializar funcionalidades de autenticación desktop
+        document.addEventListener('DOMContentLoaded', function() {
+            DesktopAuth.init(DesktopAuthConfig);
+            
+            // Detectar si se accede desde móvil y redirigir
+            if (window.innerWidth < 768) {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile) {
+                    window.location.href = '/auth/mobile';
+                }
+            }
+        });
+
+        // Prevenir zoom en inputs en iOS
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    
+    <!-- Analytics para profesionales (opcional) -->
+    <script>
+        // Sistema de monitoreo específico para accesos profesionales
+        // Solo en producción
+        if (window.location.hostname !== 'localhost') {
+            // Implementar analytics
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!-- templates/admin/profesionales.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Profesionales de la Salud</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-profesionales.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <div class="main-content">
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <h1>Profesionales de la Salud</h1>
+                    <button class="btn btn-primary" id="nuevoProfesionalBtn">
+                        <i class="fas fa-plus"></i> Nuevo Profesional
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="especialidadFilter">Especialidad</label>
+                            <select id="especialidadFilter" class="filter-select">
+                                <option value="todas">Todas</option>
+                                <option value="cardiologia">Cardiología</option>
+                                <option value="medicina-interna">Medicina Interna</option>
+                                <option value="endocrinologia">Endocrinología</option>
+                                <option value="psicologia">Psicología Clínica</option>
+                                <option value="neumologia">Neumología</option>
+                                <option value="oncologia">Oncología</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="rolFilter">Rol</label>
+                            <select id="rolFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="medico">Médico</option>
+                                <option value="psicologo">Psicólogo</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="estadoFilter">Estado</label>
+                            <select id="estadoFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="activo">Activo</option>
+                                <option value="inactivo">Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="filter-group search-group">
+                            <label for="busquedaInput">Búsqueda</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="busquedaInput" class="filter-input" placeholder="Nombre del profesional">
+                                <i class="fas fa-search search-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Profesionales -->
+                <!-- REEMPLAZAR SOLO LA TABLA EN templates/admin/profesionales.html -->
+
+                <div class="card table-section">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="profesionalesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>DNI</th>
+                                    <th>Especialidad</th>
+                                    <th>Rol</th>
+                                    <th>Horario de Atención</th>
+                                    <th>Pacientes Asignados</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profesional in profesionales %}
+                                <tr data-id="{{ profesional.id }}">
+                                    <td>{{ profesional.id }}</td>
+                                    <td>{{ profesional.nombre_completo }}</td>
+                                    <td>{{ profesional.dni }}</td>
+                                    <td>
+                                        <span class="especialidad-tag {{ profesional.especialidad|lower|replace(' ', '-')|replace('í', 'i')|replace('ó', 'o') }}">
+                                            {{ profesional.especialidad }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="rol-tag {{ profesional.rol|lower }}">{{ profesional.rol }}</span>
+                                    </td>
+                                    <td>{{ profesional.horario_atencion }}</td>
+                                    <td>
+                                        <span class="pacientes-count">{{ profesional.pacientes_asignados }}</span>
+                                        <small>{% if profesional.rol == 'PSICÓLOGO' %}sesiones{% else %}pacientes{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <span class="status {% if profesional.estado == 'ACTIVO' %}active{% else %}inactive{% endif %}">
+                                            {{ profesional.estado }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="Ver detalles" data-id="{{ profesional.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Editar" data-id="{{ profesional.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% if profesional.rol == 'MÉDICO' %}
+                                            <button class="btn-action btn-schedule" title="Gestionar Horarios" data-id="{{ profesional.id }}">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </button>
+                                            {% else %}
+                                            <button class="btn-action btn-forum" title="Estadísticas Foro" data-id="{{ profesional.id }}">
+                                                <i class="fas fa-comments"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn-action btn-toggle {% if profesional.estado == 'ACTIVO' %}active{% else %}inactive{% endif %}" 
+                                                    title="Activar/Desactivar" data-id="{{ profesional.id }}">
+                                                <i class="fas {% if profesional.estado == 'ACTIVO' %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center">No hay profesionales registrados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo/Editar Profesional -->
+    <div id="modalProfesional" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nuevo Profesional</h3>
+                <button class="modal-close" id="closeProfesionalModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formProfesional" class="form-grid form-grid-2">
+                    <!-- Información Personal -->
+                    <div class="form-section">
+                        <h4>Información Personal</h4>
+                        <div class="form-group">
+                            <label for="profNombre">Nombre Completo *</label>
+                            <input type="text" id="profNombre" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profDNI">DNI *</label>
+                            <input type="text" id="profDNI" class="form-input" maxlength="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="profTelefono">Teléfono</label>
+                            <input type="tel" id="profTelefono" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="profEmail">Email Institucional *</label>
+                            <input type="email" id="profEmail" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <!-- Información Profesional -->
+                    <div class="form-section">
+                        <h4>Información Profesional</h4>
+                        <div class="form-group">
+                            <label for="profRol">Rol *</label>
+                            <select id="profRol" class="form-input" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="medico">Médico</option>
+                                <option value="psicologo">Psicólogo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profEspecialidad">Especialidad *</label>
+                            <select id="profEspecialidad" class="form-input" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="cardiologia">Cardiología</option>
+                                <option value="medicina-interna">Medicina Interna</option>
+                                <option value="endocrinologia">Endocrinología</option>
+                                <option value="psicologia">Psicología Clínica</option>
+                                <option value="neumologia">Neumología</option>
+                                <option value="oncologia">Oncología</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profColegiatura">N° Colegiatura</label>
+                            <input type="text" id="profColegiatura" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="profUsuario">Usuario del Sistema *</label>
+                            <input type="text" id="profUsuario" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <!-- Horarios -->
+                    <div class="form-section form-section-full">
+                        <h4>Horarios de Atención</h4>
+                        <div class="horarios-grid">
+                            <div class="horario-dia">
+                                <label>
+                                    <input type="checkbox" id="lunes"> Lunes
+                                </label>
+                                <div class="horario-inputs">
+                                    <input type="time" id="lunesInicio" class="form-input-small">
+                                    <span>-</span>
+                                    <input type="time" id="lunesFin" class="form-input-small">
+                                </div>
+                            </div>
+                            <div class="horario-dia">
+                                <label>
+                                    <input type="checkbox" id="martes"> Martes
+                                </label>
+                                <div class="horario-inputs">
+                                    <input type="time" id="martesInicio" class="form-input-small">
+                                    <span>-</span>
+                                    <input type="time" id="martesFin" class="form-input-small">
+                                </div>
+                            </div>
+                            <div class="horario-dia">
+                                <label>
+                                    <input type="checkbox" id="miercoles"> Miércoles
+                                </label>
+                                <div class="horario-inputs">
+                                    <input type="time" id="miercolesInicio" class="form-input-small">
+                                    <span>-</span>
+                                    <input type="time" id="miercolesFin" class="form-input-small">
+                                </div>
+                            </div>
+                            <div class="horario-dia">
+                                <label>
+                                    <input type="checkbox" id="jueves"> Jueves
+                                </label>
+                                <div class="horario-inputs">
+                                    <input type="time" id="juevesInicio" class="form-input-small">
+                                    <span>-</span>
+                                    <input type="time" id="juevesFin" class="form-input-small">
+                                </div>
+                            </div>
+                            <div class="horario-dia">
+                                <label>
+                                    <input type="checkbox" id="viernes"> Viernes
+                                </label>
+                                <div class="horario-inputs">
+                                    <input type="time" id="viernesInicio" class="form-input-small">
+                                    <span>-</span>
+                                    <input type="time" id="viernesFin" class="form-input-small">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelProfesional">Cancelar</button>
+                <button class="btn btn-primary" id="guardarProfesional">Guardar Profesional</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/admin-profesionales.js') }}"></script>
+</body>
+</html>

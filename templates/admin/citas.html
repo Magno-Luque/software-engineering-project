@@ -1,0 +1,298 @@
+<!-- templates/admin/citas.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Citas Médicas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-citas.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <div class="main-content">
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <h1>Citas Médicas</h1>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="especialidadFilter">Especialidad</label>
+                            <select id="especialidadFilter" class="filter-select">
+                                <option value="todas">Todas</option>
+                                <option value="cardiologia">Cardiología</option>
+                                <option value="medicina-interna">Medicina Interna</option>
+                                <option value="endocrinologia">Endocrinología</option>
+                                <option value="psicologia">Psicología Clínica</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Citas -->
+                <div class="card table-section">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="citasTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Paciente</th>
+                                    <th>Médico</th>
+                                    <th>Especialidad</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- <tr>
+                                    <td>1</td>
+                                    <td>Gian Carlos Mendoza García</td>
+                                    <td>Dr. José Pérez</td>
+                                    <td>
+                                        <span class="especialidad-tag cardiologia">Cardiología</span>
+                                    </td>
+                                    <td>31/05/2024</td>
+                                    <td>09:00</td>
+                                    <td>
+                                        <span class="tipo-cita virtual">
+                                            <i class="fas fa-video"></i> Virtual
+                                        </span>
+                                    </td>
+                                    <td><span class="status attended">ATENDIDA</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-action btn-zoom" title="Ver enlace Zoom">
+                                                <i class="fas fa-video"></i>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-action btn-cancel" title="Cancelar">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                              
+                                <tr>
+                                    <td>3</td>
+                                    <td>Carlos Alberto Rodríguez Silva</td>
+                                    <td>Psic. Ana María Vega</td>
+                                    <td>
+                                        <span class="especialidad-tag psicologia">Psicología Clínica</span>
+                                    </td>
+                                    <td>31/05/2024</td>
+                                    <td>15:30</td>
+                                    <td>
+                                        <span class="tipo-cita virtual">
+                                            <i class="fas fa-video"></i> Virtual
+                                        </span>
+                                    </td>
+                                    <td><span class="status no-attended">NO ATENDIDA</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-action btn-zoom" title="Ver enlace Zoom">
+                                                <i class="fas fa-video"></i>
+                                            </button>
+                                            <button class="btn-action btn-reschedule" title="Reprogramar">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </button>
+                                            <button class="btn-action btn-cancel" title="Cancelar">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr> -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Resumen de Citas -->
+                <!-- <div class="summary-grid">
+                    <div class="card summary-card">
+                        <div class="summary-header">
+                            <h3>Resumen del Día</h3>
+                        </div>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">8</span>
+                                <span class="stat-label">Total Citas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">5</span>
+                                <span class="stat-label">Atendidas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">2</span>
+                                <span class="stat-label">Pendientes</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">1</span>
+                                <span class="stat-label">No Atendidas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nueva/Editar Cita -->
+    <div id="modalCita" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="modalTitleCita">Nueva Cita</h3>
+                <button class="modal-close" id="closeCitaModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formCita" class="form-grid form-grid-2">
+                    <!-- Información del Paciente -->
+                    <div class="form-section">
+                        <h4>Información del Paciente</h4>
+                        <div class="form-group">
+                            <label for="citaPaciente">Paciente *</label>
+                            <select id="citaPaciente" class="form-input" required>
+                                <option value="">Seleccionar paciente...</option>
+                                <option value="1">Gian Carlos Mendoza García</option>
+                                <option value="2">María Elena González Ruiz</option>
+                                <option value="3">Carlos Alberto Rodríguez Silva</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="citaMotivo">Motivo de la consulta</label>
+                            <textarea id="citaMotivo" class="form-input" rows="3" placeholder="Describir el motivo..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Información de la Cita -->
+                    <div class="form-section">
+                        <h4>Información de la Cita</h4>
+                        <div class="form-group">
+                            <label for="citaMedico">Médico/Psicólogo *</label>
+                            <select id="citaMedico" class="form-input" required>
+                                <option value="">Seleccionar profesional...</option>
+                                <option value="dr-perez">Dr. José Pérez - Cardiología</option>
+                                <option value="dr-marcelino">Dr. Alberto Marcelino - Medicina Interna</option>
+                                <option value="dra-lopez">Dra. Carmen López - Endocrinología</option>
+                                <option value="psic-vega">Psic. Ana Vega - Psicología Clínica</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="citaFecha">Fecha *</label>
+                            <input type="date" id="citaFecha" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="citaHora">Hora *</label>
+                            <input type="time" id="citaHora" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="citaTipo">Tipo de consulta *</label>
+                            <select id="citaTipo" class="form-input" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="presencial">Presencial</option>
+                                <option value="virtual">Virtual</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Información Adicional -->
+                    <div class="form-section form-section-full">
+                        <h4>Información Adicional</h4>
+                        <div class="additional-info-grid">
+                            <div class="form-group" id="consultorioGroup">
+                                <label for="citaConsultorio">Consultorio</label>
+                                <select id="citaConsultorio" class="form-input">
+                                    <option value="">Seleccionar consultorio...</option>
+                                    <option value="consultorio-1">Consultorio 1</option>
+                                    <option value="consultorio-2">Consultorio 2</option>
+                                    <option value="consultorio-3">Consultorio 3</option>
+                                    <option value="consultorio-4">Consultorio 4</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="enlaceZoomGroup" style="display: none;">
+                                <label for="citaEnlaceZoom">Enlace Zoom</label>
+                                <input type="url" id="citaEnlaceZoom" class="form-input" placeholder="https://zoom.us/j/...">
+                                <button type="button" class="btn btn-secondary btn-sm" id="generarZoomBtn">
+                                    <i class="fas fa-video"></i> Generar Enlace
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label for="citaNotas">Notas adicionales</label>
+                                <textarea id="citaNotas" class="form-input" rows="2" placeholder="Notas para la cita..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCita">Cancelar</button>
+                <button class="btn btn-primary" id="guardarCita">Guardar Cita</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Enlace Zoom -->
+    <div id="modalZoom" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enlace de Videollamada</h3>
+                <button class="modal-close" id="closeZoomModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="zoom-info">
+                    <div class="zoom-details">
+                        <p><strong>Paciente:</strong> <span id="zoomPaciente">-</span></p>
+                        <p><strong>Médico:</strong> <span id="zoomMedico">-</span></p>
+                        <p><strong>Fecha y Hora:</strong> <span id="zoomFechaHora">-</span></p>
+                    </div>
+                    <div class="zoom-link-section">
+                        <label>Enlace de la reunión:</label>
+                        <div class="zoom-link-container">
+                            <input type="text" id="zoomLink" class="form-input" readonly value="https://zoom.us/j/1234567890?pwd=abcd1234">
+                            <button class="btn btn-secondary" id="copiarZoomBtn">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="abrirZoomBtn">
+                    <i class="fas fa-external-link-alt"></i> Abrir Zoom
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/admin-citas.js') }}"></script>
+</body>
+</html>

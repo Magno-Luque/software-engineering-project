@@ -1,0 +1,196 @@
+<!-- templates/admin/citas.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Citas Médicas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-citas.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <h1>Gestión de Citas Médicas</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="exportarPDFBtn">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <button class="btn btn-secondary" id="exportarExcelBtn">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                        <button class="btn btn-primary" id="nuevaCitaBtn">
+                            <i class="fas fa-plus"></i> Nueva Cita
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label for="fechaFilter">Fecha</label>
+                            <input type="date" id="fechaFilter" class="filter-input">
+                        </div>
+                        <div class="filter-group">
+                            <label for="medicoFilter">Médico</label>
+                            <select id="medicoFilter" class="filter-select">
+                                <option value="todos">Todos los médicos</option>
+                                <!-- Se cargan dinámicamente desde el servidor -->
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="especialidadFilter">Especialidad</label>
+                            <select id="especialidadFilter" class="filter-select">
+                                <option value="todas">Todas</option>
+                                <option value="cardiologia">Cardiología</option>
+                                <option value="medicina-interna">Medicina Interna</option>
+                                <option value="endocrinologia">Endocrinología</option>
+                                <option value="psicologia">Psicología Clínica</option>
+                                <option value="neumologia">Neumología</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="estadoFilter">Estado</label>
+                            <select id="estadoFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="agendada">Agendada</option>
+                                <option value="atendida">Atendida</option>
+                                <option value="no-atendida">No Atendida</option>
+                                <option value="cancelada">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="tipoFilter">Tipo</label>
+                            <select id="tipoFilter" class="filter-select">
+                                <option value="todos">Todos</option>
+                                <option value="presencial">Presencial</option>
+                                <option value="virtual">Virtual</option>
+                            </select>
+                        </div>
+                        <div class="filter-group search-group">
+                            <label for="busquedaInput">Buscar Paciente</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="busquedaInput" class="filter-input" placeholder="Nombre o DNI del paciente...">
+                                <i class="fas fa-search search-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Citas -->
+                <div class="card table-section">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="citasTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Paciente</th>
+                                    <th>Médico</th>
+                                    <th>Especialidad</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se carga dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginación -->
+                    <div class="pagination-wrapper">
+                        <div class="pagination-info">
+                            Mostrando 0-0 de 0 citas
+                        </div>
+                        <div class="pagination-controls">
+                            <!-- Se genera dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de Estadísticas (Opcional) -->
+                {% if estadisticas %}
+                <div class="summary-grid">
+                    <div class="card summary-card">
+                        <div class="summary-header">
+                            <h3>Resumen General</h3>
+                        </div>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">{{ estadisticas.total_citas }}</span>
+                                <span class="stat-label">Total Citas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ estadisticas.por_estado.atendidas }}</span>
+                                <span class="stat-label">Atendidas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ estadisticas.por_estado.agendadas }}</span>
+                                <span class="stat-label">Agendadas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">{{ estadisticas.por_estado.no_atendidas }}</span>
+                                <span class="stat-label">No Atendidas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Enlace Zoom -->
+    <div id="modalZoom" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enlace de Videollamada</h3>
+                <button class="modal-close" id="closeZoomModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="zoom-info">
+                    <div class="zoom-details">
+                        <p><strong>Paciente:</strong> <span id="zoomPaciente">-</span></p>
+                        <p><strong>Médico:</strong> <span id="zoomMedico">-</span></p>
+                        <p><strong>Fecha y Hora:</strong> <span id="zoomFechaHora">-</span></p>
+                    </div>
+                    <div class="zoom-link-section">
+                        <label>Enlace de la reunión:</label>
+                        <div class="zoom-link-container">
+                            <input type="text" id="zoomLink" class="form-input" readonly>
+                            <button class="btn btn-secondary" id="copiarZoomBtn">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="abrirZoomBtn">
+                    <i class="fas fa-external-link-alt"></i> Abrir Enlace
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/admin-citas.js') }}"></script>
+</body>
+</html>

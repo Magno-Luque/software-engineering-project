@@ -1,0 +1,244 @@
+<!-- templates/admin/horarios.html -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Horarios Disponibles</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-horarios.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                
+                <!-- Header de la página -->
+                <div class="page-header">
+                    <h1>Gestión de Horarios Médicos</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-primary" id="nuevoHorarioBtn">
+                            <i class="fas fa-plus"></i> Crear Horario Disponible
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navegación de semanas -->
+                <div class="card filters-section">
+                    <div class="calendar-controls">
+                        <div class="navigation-controls">
+                            <button class="btn btn-secondary" id="semanaAnterior">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <div class="period-selector">
+                                <h3 id="periodoActual">Cargando...</h3>
+                            </div>
+                            <button class="btn btn-secondary" id="semanaSiguiente">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendario Semanal -->
+                <div class="card calendar-section" id="calendarioSemanal">
+                    <div class="calendar-header">
+                        <div class="time-column">Hora</div>
+                        <div class="day-column">
+                            <div class="day-header">
+                                <span class="day-name">Lunes</span>
+                                <span class="day-date">--</span>
+                            </div>
+                        </div>
+                        <div class="day-column">
+                            <div class="day-header">
+                                <span class="day-name">Martes</span>
+                                <span class="day-date">--</span>
+                            </div>
+                        </div>
+                        <div class="day-column">
+                            <div class="day-header">
+                                <span class="day-name">Miércoles</span>
+                                <span class="day-date">--</span>
+                            </div>
+                        </div>
+                        <div class="day-column">
+                            <div class="day-header">
+                                <span class="day-name">Jueves</span>
+                                <span class="day-date">--</span>
+                            </div>
+                        </div>
+                        <div class="day-column">
+                            <div class="day-header">
+                                <span class="day-name">Viernes</span>
+                                <span class="day-date">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="calendar-body">
+                        <!-- El contenido se genera dinámicamente con JavaScript -->
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
+                            <p>Cargando horarios...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leyenda actualizada -->
+                <div class="legend-section">
+                    <div class="legend-item">
+                        <div class="legend-color empty"></div>
+                        <span>Sin horario definido</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color available"></div>
+                        <span>Disponible para citas</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color occupied"></div>
+                        <span>Ocupado con citas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Nuevo/Editar Horario - MEJORADO -->
+    <div id="modalHorario" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Crear Horario Disponible</h3>
+                <button class="modal-close" id="closeHorarioModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #1976d2;">
+                        <i class="fas fa-info-circle"></i> ¿Qué estás creando?
+                    </h4>
+                    <p style="margin: 0; color: #0d47a1; font-size: 14px;">
+                        Estás definiendo un horario en el que el médico estará disponible para atender pacientes. 
+                        Una vez creado, los pacientes podrán agendar citas en este horario.
+                    </p>
+                </div>
+
+                <form id="formHorario" class="form-grid">
+                    <div class="form-group">
+                        <label for="horarioProfesional">Médico/Profesional *</label>
+                        <select id="horarioProfesional" class="form-input" required>
+                            <option value="">Seleccionar profesional...</option>
+                            <!-- Las opciones se cargan dinámicamente -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="horarioFecha">Fecha *</label>
+                        <input type="date" id="horarioFecha" class="form-input" required>
+                    </div>
+                    
+                    <!-- CAMBIO: Hora de inicio SIN minutos -->
+                    <div class="form-group">
+                        <label for="horarioInicio">Hora de Inicio *</label>
+                        <select id="horarioInicio" class="form-input" required>
+                            <option value="">Seleccionar hora...</option>
+                            <option value="08:00">08:00 AM</option>
+                            <option value="09:00">09:00 AM</option>
+                            <option value="10:00">10:00 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="12:00">12:00 PM</option>
+                            <option value="13:00">01:00 PM</option>
+                            <option value="14:00">02:00 PM</option>
+                            <option value="15:00">03:00 PM</option>
+                            <option value="16:00">04:00 PM</option>
+                            <option value="17:00">05:00 PM</option>
+                            <option value="18:00">06:00 PM</option>
+                            <option value="19:00">07:00 PM</option>
+                            <option value="20:00">08:00 PM</option>
+                        </select>
+                    </div>
+                    
+                    <!-- CAMBIO: Hora de fin CALCULADA automáticamente -->
+                    <div class="form-group">
+                        <label for="horarioFin">Hora de Fin *</label>
+                        <select id="horarioFin" class="form-input" required>
+                            <option value="">Se calcula automáticamente</option>
+                            <!-- Se llena automáticamente según hora inicio -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="horarioTipo">Tipo de Consulta *</label>
+                        <select id="horarioTipo" class="form-input" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="presencial">Presencial</option>
+                            <option value="virtual">Virtual</option>
+                            <option value="mixto">Mixto</option>
+                        </select>
+                    </div>
+                    
+                    <!-- CAMBIO: Campo específico para consultorios y salas -->
+                    <div class="form-group" id="consultorioGroup" style="display: none;">
+                        <label for="horarioConsultorio">Consultorio/Sala *</label>
+                        <select id="horarioConsultorio" class="form-input">
+                            <option value="">Seleccionar ubicación...</option>
+                            <optgroup label="Consultorios">
+                                <option value="Consultorio 1">Consultorio 1</option>
+                                <option value="Consultorio 2">Consultorio 2</option>
+                                <option value="Consultorio 3">Consultorio 3</option>
+                                <option value="Consultorio 4">Consultorio 4</option>
+                                <option value="Consultorio 5">Consultorio 5</option>
+                            </optgroup>
+                            <optgroup label="Salas">
+                                <option value="Sala A">Sala A</option>
+                                <option value="Sala B">Sala B</option>
+                                <option value="Sala C">Sala C</option>
+                                <option value="Sala D">Sala D</option>
+                                <option value="Sala E">Sala E</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- NUEVO: Campo para enlace Zoom (virtual y mixto) -->
+                    <div class="form-group" id="enlaceZoomGroup" style="display: none;">
+                        <label for="horarioEnlaceZoom">Enlace de Reunión Virtual</label>
+                        <input type="text" id="horarioEnlaceZoom" class="form-input" readonly
+                               placeholder="Se generará automáticamente..." 
+                               style="background-color: #f8f9fa;">
+                        <small style="color: #6c757d; font-size: 12px;">
+                            <i class="fas fa-info-circle"></i> Enlace generado automáticamente para la videollamada
+                        </small>
+                    </div>
+                    
+                    <div class="form-group form-group-full">
+                        <label for="horarioNotas">Observaciones</label>
+                        <textarea id="horarioNotas" class="form-input" rows="3" 
+                                  placeholder="Notas adicionales sobre este horario..."></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelHorario">Cancelar</button>
+                <button class="btn btn-primary" id="guardarHorario">
+                    <i class="fas fa-save"></i> <span id="btnGuardarTexto">Crear Horario Disponible</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/admin-horarios.js') }}"></script>
+</body>
+</html>

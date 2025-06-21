@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Alertas Críticas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/alertas.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_paciente.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container"> {# Cambiado de 'alertas-container' a 'dashboard-container' si esa es la intención #}
+                <h1>Alertas Pendientes</h1>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="alertas-section">
+                    {% if alertas %}
+                        {% for alerta in alertas %}
+                        <div class="alerta-card">
+                            <div class="alerta-header">
+                                <span class="detail-label">Estado:</span>
+                                <span class="alerta-estado">{{ alerta.estado }}</span>
+                                <span class="alerta-fecha">{{ alerta.fecha.strftime('%d/%m/%Y, %I:%M:%S %p') }}</span>
+                            </div>
+                            
+                            <div class="alerta-content">
+                                <div class="alerta-detail">
+                                    {% if alerta.glucosa is not none %}
+                                    <div class="detail-group">
+                                        <span class="detail-label">Glucosa:</span>
+                                        <span class="detail-value">{{ alerta.glucosa }} mg/dL</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if alerta.sistolica is not none or alerta.diastolica is not none %}
+                                    <div class="detail-group">
+                                        <span class="detail-label">Presión arterial:</span>
+                                        {% if alerta.sistolica is not none and alerta.diastolica is not none %}
+                                        <span class="detail-value">{{ alerta.sistolica }}/{{ alerta.diastolica }} mmHg</span>
+                                        {% elif alerta.sistolica is not none %}
+                                        <span class="detail-value">{{ alerta.sistolica }} mmHg (sistólica)</span>
+                                        {% elif alerta.diastolica is not none %}
+                                        <span class="detail-value">{{ alerta.diastolica }} mmHg (diastólica)</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if alerta.frecuencia_cardiaca is not none %}
+                                    <div class="detail-group">
+                                        <span class="detail-label">Frecuencia cardíaca:</span>
+                                        <span class="detail-value">{{ alerta.frecuencia_cardiaca }} lpm</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if alerta.informacion %}
+                                    <div class="alerta-info">
+                                        <span class="detail-label">Diagnóstico preliminar:</span>
+                                        <div class="diagnostico-list">
+                                            {% for punto in alerta.informacion.split('.') %}
+                                                {% if punto.strip() %}
+                                                    <div class="diagnostico-punto">{{ punto.strip() }}.</div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if alerta.nota %}
+                                    <div class="alerta-nota">
+                                        <span class="detail-label">Nota:</span>
+                                        <p>{{ alerta.nota }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div> {# Cierra alerta-detail #}
+                            </div> {# Cierra alerta-content #}
+                        </div> {# Cierra alerta-card #}
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No tienes alertas críticas actualmente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

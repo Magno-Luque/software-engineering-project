@@ -1,0 +1,142 @@
+/* static/css/desktop/desktop-layout.css */
+.desktop-layout {
+    display: flex;
+    min-height: 100vh; /* Asegura que la aplicación ocupe al menos toda la altura de la ventana */
+    overflow: hidden; /* Esto evita que el propio layout haga scroll si el sidebar o navbar fijo lo causan */
+}
+
+.sidebar {
+    width: 250px; /* Ancho fijo del sidebar */
+    background-color: var(--primary-blue);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    /* No poner height: 100vh; aquí directamente porque el padre (desktop-layout) ya es flex y lo ajustará */
+    flex-shrink: 0; /* Asegura que el sidebar no se encoja */
+}
+
+.sidebar-header {
+    padding: 20px;
+    display: flex;
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center;     /* Centra verticalmente */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.sidebar-logo {
+    width: 205px;
+    height: auto;
+}
+
+.sidebar-nav {
+    flex-grow: 1; /* Permite que la navegación ocupe todo el espacio sobrante */
+    /* ¡ELIMINA O COMENTA ESTA LÍNEA! */
+    /* overflow-y: auto; */ /* Esto es lo que hacía que la navegación tuviera su propio scroll */
+    padding: 20px 0;
+    /* Si el contenido de la navegación excede el espacio, se desbordará visualmente.
+       Podrías añadir: overflow: hidden; si quieres que se corte sin scroll */
+}
+
+.sidebar-nav ul li {
+    margin-bottom: 5px;
+}
+
+.sidebar-nav ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+    gap: 15px;
+}
+
+.sidebar-nav ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.sidebar-nav ul li.active a {
+    background-color: var(--secondary-blue);
+    color: var(--text-light);
+    border-radius: 0 25px 25px 0;
+    font-weight: bold;
+}
+
+.sidebar-nav ul li.active a i {
+    color: var(--text-light);
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    margin-top: auto; /* Esto siempre empuja el footer hacia el final si hay espacio */
+}
+
+.user-profile {
+    display: flex;
+    
+    align-items: center;     /* Centra verticalmente */
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.user-profile i {
+    font-size: 32px;
+    color: var(--light-blue);
+}
+
+.user-role {
+    display: block;
+    font-weight: bold;
+}
+
+.user-clinic {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.logout-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.3s ease;
+}
+
+.logout-link:hover {
+    color: var(--text-light);
+}
+
+/* ---------------------------------------------------- */
+/* Main Content (derecha) - donde se maneja el scroll */
+/* ---------------------------------------------------- */
+.main-content {
+    flex-grow: 1; /* Permite que el contenido principal ocupe el resto del ancho */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* ¡AQUÍ ES DONDE EL SCROLL PRINCIPAL DE LA PÁGINA OCURRE! */
+    max-height: 100vh; /* Asegura que no se desborde el viewport en altura */
+}
+
+.navbar-desktop {
+    background-color: var(--card-bg);
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    flex-shrink: 0; /* Asegura que la navbar no se encoja */
+}
+
+.dashboard-container {
+    padding: 30px;
+    background-color: #f4f6f9;
+    flex-grow: 1; /* Permite que el contenido del dashboard ocupe el espacio restante */
+    /* No poner overflow-y: auto; aquí si ya lo tiene .main-content */
+}
+
+/* ... (resto del CSS) ... */

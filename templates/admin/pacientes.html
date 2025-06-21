@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Gestión de Pacientes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilidades.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/admin-pacientes.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_desktop.html' %}
+
+        <div class="main-content">
+
+            <div class="dashboard-container">
+                <div class="page-header">
+                    <h1>Gestión de Pacientes</h1>
+                    <button class="btn btn-primary" id="nuevoPacienteBtn">
+                        <i class="fas fa-plus"></i> Nuevo Paciente
+                    </button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card filters-section">
+                    <div class="filters-grid">
+                        <div class="filter-group search-group">
+                            <label for="busquedaInput">Búsqueda</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="busquedaInput" class="filter-input" placeholder="Nombre o DNI">
+                                <i class="fas fa-search search-icon"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Pacientes -->
+                <div class="card table-section">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="pacientesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>DNI</th>
+                                    <th>Edad</th>
+                                    <th>Enfermedades</th>
+                                    <th>Médico Asignado</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paciente in pacientes %}
+                                <tr>
+                                    <td>{{ paciente['id'] }}</td>
+                                    <td>{{ paciente['nombre_completo'] }}</td>
+                                    <td>{{ paciente['dni'] }}</td>
+                                    <td>{{ paciente['edad'] }} años</td>
+                                    <td>
+                                        {% for enfermedad in paciente.enfermedades %}
+                                        <span class="enfermedad-tag {{ enfermedad|lower }}">{{ enfermedad }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for medico in paciente['medico_asignado'] %}
+                                        <div>{{ medico }}</div>
+                                        {% endfor %}
+                                    </td>
+                                    <td><span class="estado">{{ paciente['estado'] }}</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-action btn-edit" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-action btn-toggle {% if paciente.estado == 'ACTIVO' %}active{% else %}inactive{% endif %}" 
+                                                    title="Activar/Desactivar">
+                                                <i class="fas {% if paciente.estado == 'ACTIVO' %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+    <!-- Modal Asignar Cuidador -->
+    <div id="modalCuidador" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Asignar Cuidador</h3>
+                <button class="modal-close" id="closeCuidadorModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Registre los datos del cuidador proporcionados por el paciente:</p>
+                <form id="formCuidador" class="form-grid">
+                    <div class="form-group">
+                        <label for="cuidadorNombre">Nombre Completo</label>
+                        <input type="text" id="cuidadorNombre" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cuidadorDNI">DNI</label>
+                        <input type="text" id="cuidadorDNI" class="form-input" maxlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cuidadorTelefono">Teléfono</label>
+                        <input type="tel" id="cuidadorTelefono" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cuidadorRelacion">Relación con el paciente</label>
+                        <select id="cuidadorRelacion" class="form-input" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="familiar">Familiar</option>
+                            <option value="conyugue">Cónyuge</option>
+                            <option value="hijo">Hijo/a</option>
+                            <option value="padre">Padre/Madre</option>
+                            <option value="hermano">Hermano/a</option>
+                            <option value="amigo">Amigo/a</option>
+                            <option value="profesional">Cuidador Profesional</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCuidador">Cancelar</button>
+                <button class="btn btn-primary" id="guardarCuidador">Asignar Cuidador</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/admin-pacientes.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Datos Biometricos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/registro_biometrico.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_paciente.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                <h1>Registro de Datos Biométricos</h1>
+                
+                <div class="biometric-form-container">
+                    <form id="biometricForm" class="biometric-form" method="POST" action="{{ url_for('triaje.datos_biometricos') }}">
+                        <div class="form-header">
+                            <h2><i class="fas fa-heartbeat"></i> Ingresa tus mediciones</h2>
+                            <p>Registra tus valores de glucosa, presión arterial y frecuencia cardíaca</p>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <!-- Glucosa -->
+                            <div class="form-group">
+                                <label for="glucosa">Glucosa (mg/dL)</label>
+                                <div class="input-with-icon input-glucosa">
+                                    <i class="fas fa-tint"></i>
+                                    <input type="number" id="glucosa" name="glucosa" required>
+                                </div>
+                            </div>
+                            
+                            <!-- Presión Arterial -->
+                            <div class="form-group">
+                                <label for="presion_sistolica">Presión Arterial (mmHg)</label>
+                                <div class="pressure-inputs">
+                                    <div class="input-with-icon">
+                                        <input type="number" id="presion_sistolica" name="presion_sistolica" placeholder="Sistólica" required>
+                                        <span class="pressure-separator">/</span>
+                                        <input type="number" id="presion_diastolica" name="presion_diastolica" placeholder="Diastólica" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Frecuencia Cardíaca -->
+                            <div class="form-group">
+                                <label for="frecuencia_cardiaca">Frecuencia Cardíaca (lpm)</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-heartbeat"></i>
+                                    <input type="number" id="frecuencia_cardiaca" name="frecuencia_cardiaca" required>
+                                </div>
+                            </div>
+                            <!-- Notas -->
+                            <div class="form-group full-width">
+                                <label for="notas">Notas adicionales</label>
+                                <textarea id="notas" name="notas" placeholder="Puede agregar observaciones sobre sintomas presentes (mareos, visión borrosa, fatiga, dolor de cabeza, palpitaciones)."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Registro
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="btnLimpiar">
+                                <i class="fas fa-eraser"></i> Limpiar
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="biometric-info">
+                        <h3><i class="fas fa-info-circle"></i> Rangos de referencia</h3>
+                        <div class="info-cards">
+                            <div class="info-card">
+                                <h4>Glucosa</h4>
+                                <div class="info-values">
+                                    <div class="value-range-item">
+                                        <span class="value-label">Normal:</span>
+                                        <span class="value-range">70-99 mg/dL</span>
+                                    </div>
+                                    <div class="value-range-item warning">
+                                        <span class="value-label">Pre-diabetes:</span>
+                                        <span class="value-range">100-125 mg/dL</span>
+                                    </div>
+                                    <div class="value-range-item danger">
+                                        <span class="value-label">Diabetes:</span>
+                                        <span class="value-range">≥126 mg/dL</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h4>Presión Arterial</h4>
+                                <div class="info-values">
+                                    <div class="value-range-item">
+                                        <span class="value-label">Normal:</span>
+                                        <span class="value-range"><120/80 mmHg</span>
+                                    </div>
+                                    <div class="value-range-item warning">
+                                        <span class="value-label">Elevada:</span>
+                                        <span class="value-range">120-129/<80 mmHg</span>
+                                    </div>
+                                    <div class="value-range-item danger">
+                                        <span class="value-label">Hipertensión:</span>
+                                        <span class="value-range">≥130/80 mmHg</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="info-card">
+                                <h4>Frecuencia Cardíaca</h4>
+                                <div class="info-values">
+                                    <div class="value-range-item">
+                                        <span class="value-label">Normal:</span>
+                                        <span class="value-range">60-100 lpm</span>
+                                    </div>
+                                    <div class="value-range-item warning">
+                                        <span class="value-label">Bradicardia:</span>
+                                        <span class="value-range"><60 lpm</span>
+                                    </div>
+                                    <div class="value-range-item danger">
+                                        <span class="value-label">Taquicardia:</span>
+                                        <span class="value-range">>100 lpm</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/shared/datos_biometricos.js') }}"></script>
+</body>
+</html>

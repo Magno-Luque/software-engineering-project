@@ -1,0 +1,46 @@
+<div class="sidebar">
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/Logo-encabezado-barra-lateral.png') }}" alt="MiControl Logo" class="sidebar-logo">
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li class="{{ 'active' if request.path == '/admin/dashboard' or request.path == '/' else '' }}">
+                <a href="{{ url_for('admin_dashboard') }}">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/admin/pacientes' else '' }}">
+                <a href="{{ url_for('admin_pacientes') }}">
+                    <i class="fas fa-user-injured"></i> Pacientes
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/admin/profesionales' else '' }}">
+                <a href="{{ url_for('admin_profesionales') }}">
+                    <i class="fas fa-user-tie"></i> Profesional de la salud
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/admin/citas' else '' }}">
+                <a href="{{ url_for('admin_citas') }}">
+                    <i class="fas fa-calendar-check"></i> Citas médicas
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/admin/horarios' else '' }}">
+                <a href="{{ url_for('admin_horarios') }}">
+                    <i class="fas fa-clock"></i> Horarios disponibles
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <i class="fas fa-user-circle"></i>
+            <div>
+                <span class="user-role">Administrador</span>
+                <span class="user-clinic">Clínica MiControl</span>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-link">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </div>
+</div>

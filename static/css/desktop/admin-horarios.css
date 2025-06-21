@@ -1,0 +1,854 @@
+/* static/css/desktop/admin-horarios.css - VERSIÓN MEJORADA */
+
+/* ================
+   HEADER DE PÁGINA
+   ================ */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 2em;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ================
+   BOTONES
+   ================ */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background-color: var(--secondary-blue);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1e40af;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-secondary.active {
+    background-color: var(--secondary-blue);
+    color: white;
+}
+
+/* ================
+   CARDS
+   ================ */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* ================
+   CONTROLES DEL CALENDARIO
+   ================ */
+.filters-section {
+    margin-bottom: 25px;
+    padding: 20px;
+}
+
+.calendar-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    align-items: center;
+}
+
+.navigation-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    justify-content: center;
+}
+
+.period-selector h3 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+/* ================
+   CALENDARIO SEMANAL
+   ================ */
+.calendar-section {
+    padding: 0;
+    overflow-x: auto;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: 80px repeat(5, 1fr);
+    background-color: var(--light-blue);
+    border-bottom: 2px solid var(--secondary-blue);
+    min-width: 700px;
+}
+
+.time-column {
+    padding: 15px 10px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-align: center;
+    border-right: 1px solid var(--border-color);
+}
+
+.day-column {
+    padding: 15px 10px;
+    text-align: center;
+    border-right: 1px solid var(--border-color);
+}
+
+.day-column:last-child {
+    border-right: none;
+}
+
+.day-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.day-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.95em;
+}
+
+.day-date {
+    font-size: 0.85em;
+    color: var(--text-gray);
+}
+
+/* ================
+   CUERPO DEL CALENDARIO
+   ================ */
+.calendar-body {
+    min-width: 700px;
+}
+
+.time-row {
+    display: grid;
+    grid-template-columns: 80px repeat(5, 1fr);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 60px;
+}
+
+.time-row:hover {
+    background-color: #f8f9fa;
+}
+
+.time-slot {
+    padding: 15px 10px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: var(--text-dark);
+    font-size: 0.9em;
+}
+
+.day-slot {
+    padding: 8px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.day-slot:last-child {
+    border-right: none;
+}
+
+/* ================
+   SLOTS DE CITAS MEJORADOS
+   ================ */
+.appointment-slot {
+    width: 100%;
+    height: 100%;
+    min-height: 50px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    text-align: center;
+    padding: 6px;
+    font-size: 16px;
+}
+
+.appointment-slot:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Estados de los slots */
+.appointment-slot.occupied {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border: 2px solid #f44336;
+    color: #c62828;
+}
+
+.appointment-slot.virtual {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border: 2px solid #2196f3;
+    color: #1565c0;
+}
+
+.appointment-slot.presencial {
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    border: 2px solid #4caf50;
+    color: #2e7d32;
+}
+
+.appointment-slot.mixto {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    border: 2px solid #9c27b0;
+    color: #6a1b9a;
+}
+
+.appointment-slot.available {
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    border: 2px solid #4caf50;
+    color: #2e7d32;
+}
+
+.appointment-slot.available:hover {
+    background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+    border-color: #388e3c;
+}
+
+/* Slots vacíos */
+.appointment-slot.empty {
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.appointment-slot.empty:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    transform: translateY(-1px);
+}
+
+/* Estado seleccionado */
+.slot-selected {
+    outline: 3px solid var(--secondary-blue);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
+/* Contenido de los slots */
+.professional-name {
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.appointment-type {
+    font-size: 0.7em;
+    opacity: 0.8;
+    margin-bottom: 2px;
+}
+
+.slot-label {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+.status-label {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.status-label.available {
+    background: #28a745;
+    color: white;
+}
+
+.status-label.occupied {
+    background: #df4935;
+    color: white;
+}
+
+/* ================
+   LEYENDA MEJORADA
+   ================ */
+.legend-section {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.legend-color {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.legend-color.empty {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    border-style: dashed;
+    border-width: 1px;
+}
+
+.legend-color.available {
+    background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+    border-color: #4caf50;
+}
+
+.legend-color.occupied {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-color: #f44336;
+}
+
+/* ================
+   MODAL MEJORADO
+   ================ */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--light-blue), #f8f9fa);
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    color: var(--text-gray);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    color: var(--text-dark);
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 15px 25px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+/* ================
+   FORMULARIOS MEJORADOS
+   ================ */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group-full {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.form-group label::after {
+    content: "*";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.form-group label[for="horarioNotas"]::after,
+.form-group label[for="horarioEnlaceZoom"]::after {
+    content: "";
+}
+
+.form-input {
+    padding: 12px 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(46, 100, 254, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-input:disabled,
+.form-input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Select mejorados */
+.form-input[type="date"],
+select.form-input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+select.form-input option {
+    padding: 8px;
+    background-color: white;
+    color: var(--text-dark);
+}
+
+select.form-input optgroup {
+    font-weight: bold;
+    color: var(--secondary-blue);
+    background-color: #f8f9fa;
+}
+
+/* Textarea mejorado */
+textarea.form-input {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+/* ================
+   GRUPOS CONDICIONALES
+   ================ */
+#consultorioGroup,
+#enlaceZoomGroup {
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+#consultorioGroup[style*="display: none"],
+#enlaceZoomGroup[style*="display: none"] {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+#enlaceZoomGroup small {
+    display: block;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* ================
+   NOTIFICACIONES MEJORADAS
+   ================ */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1001;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #6c757d, #495057);
+}
+
+/* ================
+   ANIMACIONES
+   ================ */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        transform: translate(-50%, -40%);
+        opacity: 0;
+    }
+    to { 
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from { 
+        transform: translateY(-10px); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+}
+
+.notification.show {
+    animation: slideDown 0.3s ease;
+}
+
+/* ================
+   EFECTOS HOVER MEJORADOS
+   ================ */
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.appointment-slot:hover {
+    z-index: 5;
+}
+
+/* ================
+   ESTADOS DE CARGA
+   ================ */
+#loading-overlay {
+    backdrop-filter: blur(3px);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#loading-overlay i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ================
+   RESPONSIVE MEJORADO
+   ================ */
+@media (max-width: 1200px) {
+    .calendar-controls {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .navigation-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .legend-section {
+        gap: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .calendar-header,
+    .time-row {
+        grid-template-columns: 60px repeat(5, 1fr);
+        min-width: 500px;
+    }
+    
+    .time-column,
+    .time-slot {
+        padding: 10px 5px;
+        font-size: 0.8em;
+    }
+    
+    .day-column {
+        padding: 10px 5px;
+    }
+    
+    .day-name {
+        font-size: 0.8em;
+    }
+    
+    .day-date {
+        font-size: 0.7em;
+    }
+    
+    .appointment-slot {
+        min-height: 45px;
+        padding: 4px;
+    }
+    
+    .professional-name,
+    .appointment-type,
+    .slot-label {
+        font-size: 0.7em;
+    }
+    
+    .legend-section {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .navigation-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 20px;
+        max-height: 85vh;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 15px 20px;
+    }
+}
+
+/* ================
+   ACCESIBILIDAD MEJORADA
+   ================ */
+.appointment-slot:focus {
+    outline: 3px solid var(--secondary-blue);
+    outline-offset: 2px;
+}
+
+.btn:focus {
+    outline: 3px solid var(--secondary-blue);
+    outline-offset: 2px;
+}
+
+.form-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(46, 100, 254, 0.1);
+}
+
+/* Indicadores visuales mejorados */
+.form-group.has-error .form-input {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-group.has-success .form-input {
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+/* ================
+   MEJORAS DE UX
+   ================ */
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: width 0.3s ease, height 0.3s ease;
+    transform: translate(-50%, -50%);
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Tooltip simple */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}

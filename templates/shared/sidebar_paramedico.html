@@ -1,0 +1,32 @@
+<div class="sidebar">
+    <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/Logo-encabezado-barra-lateral.png') }}" alt="MiControl Logo" class="sidebar-logo">
+        <span class="menu-toggle-icon"></span>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li class="{{ 'active' if request.path == '/paramedico/dashboard' else '' }}">
+                <a href="{{ url_for('paramedico_dashboard') }}">
+                    <i class="fas fa-home"></i> Inicio
+                </a>
+            </li>
+            <li class="{{ 'active' if request.path == '/paramedico/alertas_criticas' else '' }}">
+                <a href="{{ url_for('paramedico_alertas_criticas') }}">
+                    <i class="fas fa-star-of-life"></i> Alertas Críticas
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <i class="fas fa-user-md"></i>
+            <div>
+                <span class="user-role">Paramédico</span>
+                <span class="user-clinic"></span>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-link">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </a>
+    </div>
+</div>

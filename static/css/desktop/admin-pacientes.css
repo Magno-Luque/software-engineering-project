@@ -1,0 +1,1157 @@
+/* Agregar a static/css/desktop/admin-pacientes.css */
+
+
+/* ================================
+   PÁGINA DE PACIENTES - ADMIN
+   ================================ */
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 2em;
+}
+
+/* ================
+   FILTROS
+   ================ */
+.filters-section {
+    margin-bottom: 25px;
+    padding: 20px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+}
+
+.filter-select,
+.filter-input {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    font-size: 0.95em;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(46, 100, 254, 0.1);
+}
+
+.search-group {
+    grid-column: span 1;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-wrapper .filter-input {
+    padding-right: 40px;
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-gray);
+    pointer-events: none;
+}
+
+/* ================
+   TABLA
+   ================ */
+.table-section {
+    margin-bottom: 25px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--card-bg);
+}
+
+.data-table th {
+    background-color: var(--light-blue);
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    font-size: 0.9em;
+    vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.data-table td:nth-child(5) {
+    width: 180px;          
+}
+
+
+
+
+/* ================
+   ETIQUETAS DE ENFERMEDAD
+   ================ */
+
+.enfermedad-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.85em;
+    margin-right: 4px;
+    margin-bottom: 2px;
+    color: white;
+    text-align: center;
+    text-transform: uppercase;
+    width: 90%; 
+}
+
+.enfermedad-tag.diabetes {
+    background-color: #e6ca6e;
+}
+
+.enfermedad-tag.hipertension {
+    background-color: #f39c12;
+}
+
+.enfermedad-tag.asma {
+    background-color: #3498db;
+}
+
+.enfermedad-tag.cardiovascular {
+    background-color: #9b59b6;
+}
+
+
+/* ================
+   BOTONES DE ACCIÓN
+   ================ */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    transition: all 0.3s ease;
+}
+
+.btn-action:hover:not(.disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-view {
+    background-color: var(--secondary-blue);
+    color: white;
+}
+
+.btn-edit {
+    background-color: #f39c12;
+    color: white;
+}
+
+.btn-toggle {
+    background-color: var(--active-status);
+    color: white;
+}
+
+.btn-toggle.inactive {
+    background-color: var(--inactive-status);
+}
+
+.btn-action.disabled {
+    background-color: #ddd;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* ================
+   PAGINACIÓN
+   ================ */
+.pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 0 5px;
+}
+
+.pagination-info {
+    color: var(--text-gray);
+    font-size: 0.9em;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-pagination {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background-color: var(--light-blue);
+    border-color: var(--secondary-blue);
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-page {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.btn-page:hover {
+    background-color: var(--light-blue);
+}
+
+.btn-page.active {
+    background-color: var(--secondary-blue);
+    color: white;
+    border-color: var(--secondary-blue);
+}
+
+/* ================
+   MODAL
+   ================ */
+.modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; 
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(255, 255, 255);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(231, 201, 201, 0.3);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.3em;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    color: var(--text-gray);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: var(--text-dark);
+    background-color: var(--light-blue);
+}
+
+.modal-body {
+    padding: 20px 25px;
+}
+
+.modal-body p {
+    margin-bottom: 20px;
+    color: var(--text-gray);
+    line-height: 1.5;
+}
+
+.form-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.9em;
+}
+
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    color: var(--text-dark);
+    font-size: 0.95em;
+    transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 3px rgba(46, 100, 254, 0.1);
+}
+
+.modal-footer {
+    padding: 15px 25px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-secondary {
+    background-color: var(--border-color);
+    color: var(--text-dark);
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #bbb;
+}
+
+
+
+
+
+/* Ver detalles */
+
+/* Estilos para el modal de ver paciente - Agregar a tu archivo CSS */
+
+/* Modal Ver Paciente */
+
+/* Modal Ver Paciente */
+#modalVerPaciente .modal {
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin: 20px; /* Margen pequeño para pantallas móviles */
+    position: center;
+    opacity: 1;
+}
+/* Contenido del paciente */
+.paciente-detalle {
+    padding: 20px;
+}
+
+/* Secciones */
+.detalle-seccion {
+    margin-bottom: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fafafa;
+}
+
+.detalle-seccion h3 {
+    margin: 0 0 20px 0;
+    color: #2c3e50;
+    font-size: 1.2em;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.detalle-seccion h3 i {
+    margin-right: 10px;
+    color: #3498db;
+}
+
+/* Grid de detalles */
+.detalle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.detalle-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detalle-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detalle-item label {
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.detalle-item span {
+    color: #2c3e50;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+
+
+/* Cuidadores */
+.cuidadores-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.cuidador-item {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.cuidador-info h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.cuidador-info p {
+    margin: 5px 0;
+    color: #34495e;
+}
+
+.cuidador-info p strong {
+    color: #2c3e50;
+    min-width: 80px;
+    display: inline-block;
+}
+
+/* Estados */
+.status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.status.active {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.status.inactive {
+    background-color: #e74c3c;
+    color: white;
+}
+
+/* Loading */
+.loading-container {
+    text-align: center;
+    padding: 40px;
+}
+
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error */
+.error-container {
+    text-align: center;
+    padding: 40px;
+    color: #e74c3c;
+}
+
+.error-container i {
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.error-message {
+    font-size: 1.1em;
+    margin: 0;
+}
+
+/* Sin datos */
+.no-data {
+    color: #7f8c8d;
+    font-style: italic;
+    background: #f8f9fa !important;
+    border-color: #dee2e6 !important;
+}
+
+
+/* Botón cerrar (X) */
+#modalVerPaciente .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#modalEditarPaciente .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+#modalNuevoPaciente .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+
+/* 
+
+*/
+
+/* Estilos para el modal de editar paciente */
+
+/* Modal de edición más ancho */
+
+/* #modalVerPaciente .modal {
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color: #ffffff !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin: 20px; 
+    position: absolute;
+    opacity: 1 !important;
+} */
+
+/* Estilos para el modal de editar paciente */
+
+/* Modal de edición más ancho */
+#modalEditarPaciente .modal-editar {
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    margin: 20px; 
+    position: center;
+    opacity: 1;
+}
+
+/* Formulario de edición */
+.form-editar-paciente {
+    padding: 20px;
+    background-color: #ffffff;
+}
+
+/* Secciones del formulario */
+.form-section {
+    margin-bottom: 25px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #fafafa;
+}
+
+.form-section h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 1.1em;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 8px;
+}
+
+.form-section h4 i {
+    margin-right: 8px;
+    color: #3498db;
+}
+
+/* Grid del formulario */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Grupos de formulario */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #ffffff;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.form-group input:required {
+    border-left: 3px solid #e74c3c;
+}
+
+.form-group input:required:valid {
+    border-left: 3px solid #2ecc71;
+}
+
+/* Textarea específico */
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Checkboxes de enfermedades */
+.enfermedades-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 15px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.checkbox-enfermedad {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.checkbox-enfermedad:hover {
+    background-color: #f8f9fa;
+}
+
+.checkbox-enfermedad input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+.checkbox-enfermedad input[type="checkbox"]:checked + .checkmark {
+    color: #3498db;
+    font-weight: 600;
+}
+
+/* Botones del modal */
+#modalEditarPaciente .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+#modalEditarPaciente .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#modalEditarPaciente .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+#modalEditarPaciente .btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+#modalEditarPaciente .btn-primary {
+    background-color: #3498db;
+    color: white;
+}
+
+#modalEditarPaciente .btn-primary:hover {
+    background-color: #2980b9;
+}
+
+#modalEditarPaciente .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Estados de validación */
+.form-group input.error {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+}
+
+.form-group input.success {
+    border-color: #2ecc71;
+    box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.2);
+}
+
+
+/* Loading y error para modal de edición */
+#modalEditarPaciente .loading-container,
+#modalEditarPaciente .error-container {
+    text-align: center;
+    padding: 40px;
+}
+
+#modalEditarPaciente .loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+#modalEditarPaciente .error-container {
+    color: #e74c3c;
+}
+
+#modalEditarPaciente .error-container i {
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+/* 
+ESTADO
+*/
+
+/* NUEVO PACIENTE */
+/* Estilos para el modal de nuevo paciente */
+
+.modal-nuevo-paciente {
+    max-width: 900px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background-color: #ffffff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    position: center;
+    opacity: 1;
+}
+
+.form-nuevo-paciente {
+    padding: 0;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.form-section h4 {
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+    color: #495057;
+    font-weight: 600;
+}
+
+.form-section h4 i {
+    margin-right: 8px;
+    color: #007bff;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    background-color: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Select deshabilitado */
+.form-group select:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.form-group input[required] + label::after,
+.form-group select[required] + label::after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Texto de ayuda */
+.form-text {
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.text-muted {
+    color: #6c757d;
+}
+
+/* Estilos para checkboxes de enfermedades */
+.enfermedades-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.checkbox-enfermedad {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    background-color: white;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.checkbox-enfermedad:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+/* Estado seleccionado */
+.checkbox-enfermedad:has(input:checked) {
+    background-color: #e3f2fd;
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
+}
+
+.checkbox-enfermedad input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ced4da;
+    border-radius: 4px;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.checkbox-enfermedad input[type="checkbox"]:checked + .checkmark {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.checkbox-enfermedad input[type="checkbox"]:checked + .checkmark::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Indicador visual de especialidad */
+.checkbox-enfermedad::after {
+    content: attr(data-especialidad);
+    position: absolute;
+    right: 8px;
+    top: 4px;
+    font-size: 10px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.checkbox-enfermedad:hover::after {
+    opacity: 1;
+}
+
+/* Validación visual */
+.form-group input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: #dc3545;
+}
+
+.form-group input:valid:not(:focus):not(:placeholder-shown) {
+    border-color: #28a745;
+}
+
+/* Estados de validación para select */
+.form-group select.invalid {
+    border-color: #dc3545;
+}
+
+.form-group select.valid {
+    border-color: #28a745;
+}
+
+/* Estilos para estados del botón */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .modal-nuevo-paciente {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .enfermedades-checkboxes {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animaciones suaves */
+.form-group select {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estado de carga para el select */
+.form-group select.loading {
+    background-image: url("data:image/svg+xml,%3csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M10 2v2a6 6 0 1 1-6 6H2a8 8 0 1 0 8-8z' fill='%23007bff'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    animation: spin 1s linear infinite;
+}

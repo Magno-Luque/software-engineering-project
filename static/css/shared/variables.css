@@ -1,0 +1,21 @@
+/* static/css/shared/variables.css */
+:root {
+    --primary-blue: #0A2E8B; /* Azul oscuro del sidebar y botones principales */
+    --secondary-blue: #2E64FE; /* Azul de énfasis/botones */
+    --light-blue: #E0EBFB; /* Azul claro de fondo o elementos */
+    --text-dark: #333;
+    --text-light: #fff;
+    --text-gray: #666;
+    --border-color: #ddd;
+    --card-bg: #fff;
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --positive-change: #28a745; /* Verde */
+    --negative-change: #dc3545; /* Rojo */
+    --active-status: #28a745; /* Verde para activo */
+    --inactive-status: #6c757d; /* Gris para inactivo */
+    --pending-status: #ffc107; /* Amarillo para pendiente */
+    --attended-status: #17a2b8; /* Cyan para atendido */
+    --low-criticality: #28a745; /* Verde */
+    --medium-criticality: #ffc107; /* Amarillo */
+    --high-criticality: #dc3545; /* Rojo */
+} 

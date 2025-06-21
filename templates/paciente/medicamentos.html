@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Mis Medicamentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/medicamentos.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Manifest para PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+</head>
+<body>
+    <div class="desktop-layout">
+        <!-- Inclusión de la barra lateral -->
+        {% include 'shared/sidebar_paciente.html' %}
+
+        <div class="main-content">
+            <div class="dashboard-container">
+                <h1>Lista de Medicamentos</h1>
+                
+                <!-- Sección para mostrar mensajes flash de Flask -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="medicamentos-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-pills"></i> Tratamiento actual</h2>
+                        <button id="notification-toggle" class="btn btn-primary">
+                            <span class="notification-bell">
+                                <i class="fas fa-bell"></i>
+                                <span id="notification-counter" class="notification-badge" style="display: none;">0</span>
+                            </span>
+                            <span id="notification-status"></span>
+                        </button>
+                    </div>
+                    
+                    <div class="medicamentos-grid">
+                        {% if medicamentos %}
+                            {% for med in medicamentos %}
+                                <div class="medicamento-card" 
+                                    data-id="{{ med.idmedicamentos }}"
+                                    data-medicamento="{{ med.medicamento | default('', true) }}"
+                                    data-dosis="{{ med.dosis | default('', true) }}"
+                                    data-horario-dia="{{ med.horario_dia | default('', true) }}"
+                                    data-horario-tarde="{{ med.horario_tarde | default('', true) }}"
+                                    data-horario-noche="{{ med.horario_noche | default('', true) }}">
+                                    <div class="medicamento-header">
+                                        <h3>{{ med.medicamento }}</h3>
+                                        <span class="medicamento-fecha">{{ med.fecha.strftime('%d/%m/%Y') }}</span>
+                                    </div>
+                                    <div class="medicamento-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Dosis:</span>
+                                            <span class="detail-value">{{ med.dosis }}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Frecuencia:</span>
+                                            <span class="detail-value">{{ med.frecuencia }}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Duración:</span>
+                                            <span class="detail-value">{{ med.duracion }}</span>
+                                        </div>
+                                        {% if med.horario_dia %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Horario Mañana:</span>
+                                            <span class="detail-value">{{ med.horario_dia }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if med.horario_tarde %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Horario Tarde:</span>
+                                            <span class="detail-value">{{ med.horario_tarde }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if med.horario_noche %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Horario Noche:</span>
+                                            <span class="detail-value">{{ med.horario_noche }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if med.indicaciones %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Indicaciones:</span>
+                                            <p class="detail-value">{{ med.indicaciones }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-pills"></i>
+                                <p>No tienes medicamentos asignados actualmente</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script del Service Worker -->
+    <script>
+        // Registro del Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{{ url_for("static", filename="js/shared/medication-service-worker.js") }}')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registrado con éxito:', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Error al registrar el ServiceWorker:', error);
+                    });
+            });
+        }
+    </script>
+
+    <script>
+        class MedicationReminder {
+            constructor(toggleBtn, statusText, badge) {
+                this.CHECK_INTERVAL = 30000; // 30 segundos para pruebas
+                this.NOTIFICATION_LEAD_TIME = 15; // minutos antes para notificar
+                this.intervalId = null;
+                this.notifiedToday = new Set();
+                this.notificationCount = 0;
+                this.isActive = false;
+                
+                this.toggleBtn = toggleBtn;
+                this.statusText = statusText;
+                this.badge = badge;
+                
+                this.initialize();
+            }
+            
+            async initialize() {
+                try {
+                    if (Notification.permission === 'granted') {
+                        await this.start();
+                    }
+                    
+                    this.toggleBtn.addEventListener('click', () => this.toggleNotifications());
+                } catch (error) {
+                    console.error('Error al inicializar recordatorios:', error);
+                }
+            }
+            
+            async toggleNotifications() {
+                try {
+                    if (this.isActive) {
+                        this.stop();
+                        //this.updateUI(false);
+                    } else {
+                        const permission = await Notification.requestPermission();
+                        if (permission === 'granted') {
+                            await this.start();
+                            //this.updateUI(true);
+                        } else {
+                            alert('Las notificaciones están bloqueadas. Por favor, permite las notificaciones en la configuración de tu navegador.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al alternar notificaciones:', error);
+                }
+            }
+            
+            async start() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                
+                await this.checkMedications();
+                this.intervalId = setInterval(() => this.checkMedications(), this.CHECK_INTERVAL);
+                this.isActive = true;
+                this.clearOldNotifications();
+            }
+            
+            stop() {
+                if (this.intervalId) clearInterval(this.intervalId);
+                this.isActive = false;
+            }
+            
+            clearOldNotifications() {
+                const today = new Date().toDateString();
+                for (const key of this.notifiedToday) {
+                    if (!key.endsWith(today)) {
+                        this.notifiedToday.delete(key);
+                    }
+                }
+            }
+            
+            async checkMedications() {
+                try {
+                    const response = await fetch('/api/medicamentos/proximos');
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('La respuesta no es JSON');
+                    }
+                    
+                    const medications = await response.json();
+                    this.processMedications(medications);
+                } catch (error) {
+                    console.error('Error al verificar medicamentos:', error);
+                }
+            }
+            
+            processMedications(medications) {
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                const today = now.toDateString();
+                
+                medications.forEach(med => {
+                    this.checkMedicationTimes(med, currentMinutes, today);
+                });
+            }
+            
+            checkMedicationTimes(medication, currentMinutes, today) {
+                const times = [
+                    medication.horario_dia,
+                    medication.horario_tarde,
+                    medication.horario_noche
+                ].filter(time => time);
+                
+                times.forEach(time => {
+                    const [hours, minutes] = time.split(':').map(Number);
+                    const medTime = hours * 60 + minutes;
+                    const diffMinutes = medTime - currentMinutes;
+                    
+                    if (diffMinutes >= 0 && diffMinutes <= this.NOTIFICATION_LEAD_TIME) {
+                        const notificationKey = `${medication.id}-${time}-${today}`;
+                        
+                        if (!this.notifiedToday.has(notificationKey)) {
+                            this.notifiedToday.add(notificationKey);
+                            this.showNotification(medication, time);
+                        }
+                    }
+                });
+            }
+            
+            showNotification(medication, time) {
+                const title = `Hora de tomar ${medication.medicamento}`;
+                const body = `Dosis: ${medication.dosis}\nHora: ${time}`;
+                
+                // Incrementar contador y actualizar UI
+                this.notificationCount++;
+                this.updateBadge();
+                
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    // Usar Service Worker para notificación
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        notification: { title, body }
+                    });
+                } else if ('Notification' in window) {
+                    // Usar Notifications API directamente
+                    const notification = new Notification(title, {
+                        body,
+                        icon: '/static/images/alerta.png'
+                    });
+                    
+                    notification.onclose = () => {
+                        this.notificationCount = Math.max(0, this.notificationCount - 1);
+                        this.updateBadge();
+                    };
+                }
+                
+                this.playNotificationSound();
+            }
+            
+            playNotificationSound() {
+                try {
+                    const audio = new Audio('/static/sounds/alert.mp3');
+                    audio.play().catch(e => console.error('Error al reproducir sonido:', e));
+                } catch (e) {
+                    console.error('Error con el sonido:', e);
+                }
+            }
+            
+            // updateUI(isActive) {
+            //     const bellIcon = this.toggleBtn.querySelector('.notification-bell i');
+                
+            //     if (isActive) {
+            //         this.statusText.textContent = 'Desactivar Recordatorios';
+            //         bellIcon.classList.add('active');
+            //     } else {
+            //         this.statusText.textContent = 'Activar Recordatorios';
+            //         bellIcon.classList.remove('active');
+            //     }
+            // }
+            
+            updateBadge() {
+                if (this.notificationCount > 0) {
+                    this.badge.textContent = this.notificationCount;
+                    this.badge.style.display = 'flex';
+                } else {
+                    this.badge.style.display = 'none';
+                }
+            }
+        }
+        
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!('Notification' in window)) {
+                console.warn('Este navegador no soporta notificaciones');
+                const toggleBtn = document.getElementById('notification-toggle');
+                if (toggleBtn) toggleBtn.style.display = 'none';
+                return;
+            }
+
+            // Verificar si los elementos existen antes de usarlos
+            const toggleBtn = document.getElementById('notification-toggle');
+            const statusText = document.getElementById('notification-status');
+            const badge = document.getElementById('notification-counter');
+            
+            if (!toggleBtn || !statusText || !badge) {
+                console.error('No se encontraron los elementos necesarios para las notificaciones');
+                return;
+            }
+
+            const reminder = new MedicationReminder(toggleBtn, statusText, badge);
+        });
+    </script>
+</body>
+</html>
+</body>
+</html>

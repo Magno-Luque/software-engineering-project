@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiControl - Alertas Críticas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/utilities.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/medico.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="desktop-layout">
+        {% include 'shared/sidebar_medico.html' %}
+
+        <div class="main-content">
+            
+            <div class="dashboard-container">
+                <h1>Alertas Críticas</h1>
+
+                <!-- Panel de Monitoreo en Tiempo Real -->
+                <div class="monitoreo-panel">
+                    <h2>Panel de Monitoreo en Tiempo Real</h2>
+                    <div class="stats-alertas">
+                        <div class="stat-alerta critica">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="count-criticas">3</span>
+                                <span class="stat-label">CRÍTICAS</span>
+                            </div>
+                        </div>
+                        <div class="stat-alerta media">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="count-medias">5</span>
+                                <span class="stat-label">MEDIAS</span>
+                            </div>
+                        </div>
+                        <div class="stat-alerta baja">
+                            <div class="stat-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="count-bajas">12</span>
+                                <span class="stat-label">BAJAS</span>
+                            </div>
+                        </div>
+                        <div class="stat-alerta resueltas">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="count-resueltas">45</span>
+                                <span class="stat-label">RESUELTAS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros de alertas -->
+                <div class="filtros-alertas">
+                    <div class="filtro-grupo">
+                        <label for="filtro-tipo">Tipo de Alerta</label>
+                        <select id="filtro-tipo">
+                            <option value="todas">Todas</option>
+                            <option value="critica">Críticas</option>
+                            <option value="media">Medias</option>
+                            <option value="baja">Bajas</option>
+                        </select>
+                    </div>
+                    <div class="filtro-grupo">
+                        <label for="filtro-paciente">Paciente</label>
+                        <select id="filtro-paciente">
+                            <option value="todos">Todos</option>
+                            <option value="juan-perez">Juan Pérez García</option>
+                            <option value="maria-gonzalez">María Elena González</option>
+                            <option value="carlos-silva">Carlos Alberto Silva</option>
+                        </select>
+                    </div>
+                    <div class="filtro-grupo">
+                        <label for="filtro-fecha-desde">Desde</label>
+                        <input type="date" id="filtro-fecha-desde">
+                    </div>
+                    <div class="filtro-grupo">
+                        <label for="filtro-fecha-hasta">Hasta</label>
+                        <input type="date" id="filtro-fecha-hasta">
+                    </div>
+                    <button class="btn-filtrar" onclick="aplicarFiltrosAlertas()">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+                    <button class="btn-exportar" onclick="exportarAlertas()">
+                        <i class="fas fa-download"></i> Exportar PDF
+                    </button>
+                </div>
+
+                <!-- Lista de Alertas Pendientes -->
+                <div class="alertas-lista">
+                    <div class="alertas-header">
+                        <h2 class="titulo-blanco">Alertas Pendientes</h2>
+                        <div class="alertas-controles">
+                            <button class="btn-refrescar" onclick="refrescarAlertas()">
+                                <i class="fas fa-sync-alt"></i> Refrescar
+                            </button>
+                            <button class="btn-resolver-todas" onclick="resolverTodasAlertas()">
+                                <i class="fas fa-check-double"></i> Resolver Todas
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="lista-alertas">
+                        <!-- Alerta Crítica 1 -->
+                        <div class="alerta-item critica" data-id="001" data-paciente="juan-perez" data-tipo="critica">
+                            <div class="alerta-urgencia">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>CRÍTICA</span>
+                            </div>
+                            <div class="alerta-contenido">
+                                <div class="alerta-header">
+                                    <div class="paciente-info">
+                                        <strong>Juan Pérez García</strong>
+                                        <span class="paciente-dni">DNI: 12345678</span>
+                                    </div>
+                                    <div class="alerta-tiempo">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hace 15 min</span>
+                                    </div>
+                                </div>
+                                <div class="alerta-detalle">
+                                    <div class="alerta-tipo">
+                                        <i class="fas fa-tint"></i>
+                                        <strong>Glucosa Crítica</strong>
+                                    </div>
+                                    <div class="alerta-valor">
+                                        Valor: <span class="valor-critico">320 mg/dL</span>
+                                        <small>(Rango normal: 70-140 mg/dL)</small>
+                                    </div>
+                                    <div class="alerta-contexto">
+                                        Última medición normal hace 6 horas. Paciente con diabetes tipo 2.
+                                    </div>
+                                </div>
+                                <div class="alerta-acciones">
+                                    <button class="btn-accion contactar" onclick="contactarPaciente('001', 'Juan Pérez García')">
+                                        <i class="fas fa-phone"></i> Contactar
+                                    </button>
+                                    <button class="btn-accion derivar" onclick="derivarEmergencia('001')">
+                                        <i class="fas fa-ambulance"></i> Emergencia
+                                    </button>
+                                    <button class="btn-accion resolver" onclick="resolverAlerta('001')">
+                                        <i class="fas fa-check"></i> Resolver
+                                    </button>
+                                    <button class="btn-accion notas" onclick="agregarNotaAlerta('001')">
+                                        <i class="fas fa-sticky-note"></i> Nota
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta Crítica 2 -->
+                        <div class="alerta-item critica" data-id="002" data-paciente="maria-gonzalez" data-tipo="critica">
+                            <div class="alerta-urgencia">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>CRÍTICA</span>
+                            </div>
+                            <div class="alerta-contenido">
+                                <div class="alerta-header">
+                                    <div class="paciente-info">
+                                        <strong>María Elena González</strong>
+                                        <span class="paciente-dni">DNI: 87654321</span>
+                                    </div>
+                                    <div class="alerta-tiempo">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hace 32 min</span>
+                                    </div>
+                                </div>
+                                <div class="alerta-detalle">
+                                    <div class="alerta-tipo">
+                                        <i class="fas fa-heartbeat"></i>
+                                        <strong>Presión Arterial Elevada</strong>
+                                    </div>
+                                    <div class="alerta-valor">
+                                        Valor: <span class="valor-critico">180/110 mmHg</span>
+                                        <small>(Rango normal: < 120/80 mmHg)</small>
+                                    </div>
+                                    <div class="alerta-contexto">
+                                        Tendencia ascendente en las últimas 4 horas. Paciente hipertensa.
+                                    </div>
+                                </div>
+                                <div class="alerta-acciones">
+                                    <button class="btn-accion contactar" onclick="contactarPaciente('002', 'María Elena González')">
+                                        <i class="fas fa-phone"></i> Contactar
+                                    </button>
+                                    <button class="btn-accion derivar" onclick="derivarEmergencia('002')">
+                                        <i class="fas fa-ambulance"></i> Emergencia
+                                    </button>
+                                    <button class="btn-accion resolver" onclick="resolverAlerta('002')">
+                                        <i class="fas fa-check"></i> Resolver
+                                    </button>
+                                    <button class="btn-accion notas" onclick="agregarNotaAlerta('002')">
+                                        <i class="fas fa-sticky-note"></i> Nota
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta Media -->
+                        <div class="alerta-item media" data-id="003" data-paciente="carlos-silva" data-tipo="media">
+                            <div class="alerta-urgencia">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>MEDIA</span>
+                            </div>
+                            <div class="alerta-contenido">
+                                <div class="alerta-header">
+                                    <div class="paciente-info">
+                                        <strong>Carlos Alberto Silva</strong>
+                                        <span class="paciente-dni">DNI: 11223344</span>
+                                    </div>
+                                    <div class="alerta-tiempo">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hace 2 horas</span>
+                                    </div>
+                                </div>
+                                <div class="alerta-detalle">
+                                    <div class="alerta-tipo">
+                                        <i class="fas fa-pills"></i>
+                                        <strong>Medicación Omitida</strong>
+                                    </div>
+                                    <div class="alerta-valor">
+                                        Medicamento: <span class="medicamento-omitido">Insulina Glargina</span>
+                                        <small>(Dosis programada: 20:00)</small>
+                                    </div>
+                                    <div class="alerta-contexto">
+                                        Paciente no confirmó la toma de insulina nocturna. Historial de olvidos.
+                                    </div>
+                                </div>
+                                <div class="alerta-acciones">
+                                    <button class="btn-accion contactar" onclick="contactarPaciente('003', 'Carlos Alberto Silva')">
+                                        <i class="fas fa-phone"></i> Contactar
+                                    </button>
+                                    <button class="btn-accion recordar" onclick="enviarRecordatorio('003')">
+                                        <i class="fas fa-bell"></i> Recordar
+                                    </button>
+                                    <button class="btn-accion resolver" onclick="resolverAlerta('003')">
+                                        <i class="fas fa-check"></i> Resolver
+                                    </button>
+                                    <button class="btn-accion notas" onclick="agregarNotaAlerta('003')">
+                                        <i class="fas fa-sticky-note"></i> Nota
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta Baja -->
+                        <div class="alerta-item baja" data-id="004" data-paciente="ana-martinez" data-tipo="baja">
+                            <div class="alerta-urgencia">
+                                <i class="fas fa-info-circle"></i>
+                                <span>BAJA</span>
+                            </div>
+                            <div class="alerta-contenido">
+                                <div class="alerta-header">
+                                    <div class="paciente-info">
+                                        <strong>Ana Martínez López</strong>
+                                        <span class="paciente-dni">DNI: 55667788</span>
+                                    </div>
+                                    <div class="alerta-tiempo">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Hace 4 horas</span>
+                                    </div>
+                                </div>
+                                <div class="alerta-detalle">
+                                    <div class="alerta-tipo">
+                                        <i class="fas fa-calendar-times"></i>
+                                        <strong>Cita Perdida</strong>
+                                    </div>
+                                    <div class="alerta-valor">
+                                        Cita: <span class="cita-perdida">Control mensual - 10:00</span>
+                                        <small>(No se presentó)</small>
+                                    </div>
+                                    <div class="alerta-contexto">
+                                        Paciente no asistió a cita programada. Requiere reprogramación.
+                                    </div>
+                                </div>
+                                <div class="alerta-acciones">
+                                    <button class="btn-accion contactar" onclick="contactarPaciente('004', 'Ana Martínez López')">
+                                        <i class="fas fa-phone"></i> Contactar
+                                    </button>
+                                    <button class="btn-accion reprogramar" onclick="reprogramarCita('004')">
+                                        <i class="fas fa-calendar-plus"></i> Reprogramar
+                                    </button>
+                                    <button class="btn-accion resolver" onclick="resolverAlerta('004')">
+                                        <i class="fas fa-check"></i> Resolver
+                                    </button>
+                                    <button class="btn-accion notas" onclick="agregarNotaAlerta('004')">
+                                        <i class="fas fa-sticky-note"></i> Nota
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Alertas Resueltas -->
+                <div class="alertas-historial" style="margin-top: 30px;">
+                    <div class="historial-header">
+                        <h2>Alertas Resueltas Hoy</h2>
+                        <button class="btn-toggle" onclick="toggleHistorial()">
+                            <i class="fas fa-chevron-down"></i> Mostrar/Ocultar
+                        </button>
+                    </div>
+                    <div id="historial-contenido" style="display: none;">
+                        <div class="alerta-resuelta">
+                            <div class="resuelta-info">
+                                <strong>Pedro Ramírez</strong> - Glucosa elevada (280 mg/dL)
+                            </div>
+                            <div class="resuelta-tiempo">
+                                Resuelto: 09:15 | Contactado y medicado
+                            </div>
+                        </div>
+                        <div class="alerta-resuelta">
+                            <div class="resuelta-info">
+                                <strong>Carmen López</strong> - Presión arterial alta (160/95)
+                            </div>
+                            <div class="resuelta-tiempo">
+                                Resuelto: 08:30 | Ajuste de medicación
+                            </div>
+                        </div>
+                        <div class="alerta-resuelta">
+                            <div class="resuelta-info">
+                                <strong>Luis Herrera</strong> - Omisión de medicamento
+                            </div>
+                            <div class="resuelta-tiempo">
+                                Resuelto: 07:45 | Recordatorio enviado
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resolución de Alerta -->
+    <div id="modal-resolver" class="modal-overlay" style="display: none;">
+        <div class="modal-content resolver-modal">
+            <div class="modal-header">
+                <h3>Resolver Alerta</h3>
+                <button class="modal-close" onclick="cerrarModalResolver()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="alerta-detalle-modal"></div>
+                <div class="resolucion-form">
+                    <h4>Acciones Tomadas</h4>
+                    <textarea id="acciones-tomadas" placeholder="Describa las acciones tomadas para resolver esta alerta..." rows="4"></textarea>
+                    
+                    <h4>Estado del Paciente</h4>
+                    <select id="estado-paciente">
+                        <option value="estable">Estable</option>
+                        <option value="mejorado">Mejorado</option>
+                        <option value="requiere-seguimiento">Requiere Seguimiento</option>
+                        <option value="derivado-emergencia">Derivado a Emergencia</option>
+                    </select>
+                    
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="notificar-cuidador"> Notificar al cuidador
+                        </label>
+                        <label>
+                            <input type="checkbox" id="programar-seguimiento"> Programar cita de seguimiento
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="confirmarResolucion()">
+                    <i class="fas fa-check"></i> Resolver Alerta
+                </button>
+                <button class="btn" onclick="cerrarModalResolver()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/medico-alertas.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+/* static/css/shared/base.css */
+/* Estilos generales que aplican a toda la aplicación */
+/* Esto puede incluir estilos de fuentes, tipografía básica, etc. */
+
+body {
+    font-family: Arial, sans-serif; /* Ejemplo, ajustar a la fuente real */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-dark);
+    margin-bottom: 15px;
+} 

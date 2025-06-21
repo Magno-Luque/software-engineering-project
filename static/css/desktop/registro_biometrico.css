@@ -1,0 +1,272 @@
+/* Formulario de Datos Biométricos */
+.biometric-form-container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.biometric-form {
+    flex: 2;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+}
+
+.biometric-info {
+    flex: 1;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+    align-self: flex-start;
+}
+
+.form-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--light-blue);
+}
+
+.form-header h2 {
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-header p {
+    color: var(--text-gray);
+    font-size: 0.95em;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: var(--text-dark);
+    text-align: left;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 12px;
+    color: var(--text-gray);
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 12px 15px 12px 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1em;
+    background-color: var(--card-bg);
+    transition: border-color 0.3s ease;
+}
+
+.input-with-icon input:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Ajusta el contenedor principal */
+.pressure-inputs .input-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%; /* Ocupa todo el ancho disponible */
+}
+
+/* Estilo para ambos inputs (sistólica y diastólica) */
+.pressure-inputs input {
+    width: calc(50% - 5px); /* Mitad del espacio menos separación */
+    padding: 12px 15px; /* Mismo padding que otros inputs */
+    font-size: 1em; /* Mismo tamaño de fuente */
+    height: auto; /* Altura automática para consistencia */
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+}
+
+/* Ajusta el separador para que esté alineado verticalmente */
+.pressure-separator {
+    padding: 0 5px;
+    font-weight: bold;
+    color: var(--text-gray);
+    line-height: normal; /* Evita desplazamiento vertical */
+}
+
+.slider {
+    flex: 1;
+    height: 5px;
+    -webkit-appearance: none; /* Para navegadores basados en WebKit (Chrome, Safari, etc.) */
+    appearance: none; /* Propiedad estándar */
+    background: var(--border-color);
+    border-radius: 5px;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Para navegadores basados en WebKit */
+    appearance: none; /* Propiedad estándar */
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--secondary-blue);
+    cursor: pointer;
+}
+
+textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1em;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+    background-color: var(--card-bg);
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--secondary-blue);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--secondary-blue);
+    color: var(--text-light);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+    background-color: var(--text-gray);
+    color: var(--text-light);
+}
+
+.btn-secondary:hover {
+    background-color: var(--text-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Información de rangos */
+.biometric-info h3 {
+    color: var(--primary-blue);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.info-card {
+    background-color: var(--light-blue);
+    border-radius: 6px;
+    padding: 15px;
+    border-left: 4px solid var(--secondary-blue);
+}
+
+.info-card h4 {
+    color: var(--secondary-blue);
+    margin-bottom: 12px;
+    font-size: 1.1em;
+}
+
+.info-values {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.value-range-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.value-range-item:last-child {
+    border-bottom: none;
+}
+
+.value-label {
+    font-weight: bold;
+    color: var(--text-dark);
+}
+
+.value-range {
+    color: var(--text-gray);
+}
+
+.value-range-item.warning .value-range {
+    color: var(--medium-criticality);
+}
+
+.value-range-item.danger .value-range {
+    color: var(--high-criticality);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .biometric-form-container {
+        flex-direction: column;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
