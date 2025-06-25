@@ -1,5 +1,3 @@
-# controllers/inicio_sesion.py
-
 from flask import render_template, redirect, url_for, flash, request, session, jsonify
 from models.login import Usuario
 
@@ -7,6 +5,9 @@ class AuthController:
     @staticmethod
     def procesar_login():
         """Procesa el formulario de login (web tradicional)"""
+        # Importar mysql desde app
+        from app import mysql
+        
         # Si ya está autenticado, redirigir
         if 'user_id' in session and 'user_role' in session:
             return redirect(url_for(f"{session['user_role']}_dashboard"))
@@ -19,17 +20,18 @@ class AuthController:
                 flash('Por favor ingresa usuario y contraseña', 'danger')
                 return render_template('auth/login.html')
             
-            usuario = Usuario.validar_credenciales(username, password)
+            # Usar el método corregido con mysql como primer parámetro
+            usuario_data = Usuario.validar_credenciales(mysql, username, password)
             
-            if usuario:
-                # Configurar sesión
-                session['user_id'] = usuario.id
-                session['user_role'] = usuario.rol
-                session['user_name'] = usuario.usuario
+            if usuario_data:
+                # Configurar sesión usando los datos del diccionario
+                session['user_id'] = usuario_data['id']
+                session['user_role'] = usuario_data['rol']
+                session['user_name'] = usuario_data['usuario']
                 session.permanent = True
                 
-                flash(f'Bienvenido, {usuario.usuario}!', 'success')
-                return redirect(url_for(f"{usuario.rol}_dashboard"))
+                flash(f'Bienvenido, {usuario_data["usuario"]}!', 'success')
+                return redirect(url_for(f"{usuario_data['rol']}_dashboard"))
             else:
                 flash('Usuario o contraseña incorrectos', 'danger')
         
@@ -39,6 +41,9 @@ class AuthController:
     def api_login():
         """API endpoint para login (JSON)"""
         try:
+            # Importar mysql desde app
+            from app import mysql
+            
             # Verificar que es una petición JSON
             if not request.is_json:
                 return jsonify({
@@ -67,22 +72,22 @@ class AuthController:
                     'message': 'Usuario y contraseña son requeridos'
                 }), 400
             
-            # Validar credenciales
-            usuario = Usuario.validar_credenciales(username.strip(), password)
+            # Validar credenciales usando el método corregido
+            usuario_data = Usuario.validar_credenciales(mysql, username.strip(), password)
             
-            if usuario:
-                # Configurar sesión
-                session['user_id'] = usuario.id
-                session['user_role'] = usuario.rol
-                session['user_name'] = usuario.usuario
+            if usuario_data:
+                # Configurar sesión usando los datos del diccionario
+                session['user_id'] = usuario_data['id']
+                session['user_role'] = usuario_data['rol']
+                session['user_name'] = usuario_data['usuario']
                 session.permanent = True
                 
                 return jsonify({
                     'success': True,
-                    'message': f'Bienvenido, {usuario.usuario}',
-                    'role': usuario.rol,
-                    'user_id': usuario.id,
-                    'user_name': usuario.usuario
+                    'message': f'Bienvenido, {usuario_data["usuario"]}',
+                    'role': usuario_data['rol'],
+                    'user_id': usuario_data['id'],
+                    'user_name': usuario_data['usuario']
                 })
             else:
                 return jsonify({
@@ -138,6 +143,8 @@ class AuthController:
     def forgot_password():
         """Endpoint para recuperación de contraseña (temporal)"""
         try:
+            from app import mysql
+            
             if request.method == 'POST':
                 if request.is_json:
                     datos = request.get_json()
@@ -152,20 +159,30 @@ class AuthController:
                     }
                     return jsonify(response_data) if request.is_json else render_template('auth/forgot_password.html', error=response_data['message'])
                 
-                # Verificar si el usuario existe
-                usuario = Usuario.query.filter_by(usuario=username.strip(), activo=True).first()
-                
-                if usuario:
-                    # TODO: Implementar envío de email real
-                    # Por ahora solo simular el proceso
-                    response_data = {
-                        'success': True,
-                        'message': f'Se ha enviado un enlace de recuperación al correo registrado para {username}'
-                    }
-                else:
+                # Verificar si el usuario existe usando consulta SQL directa
+                try:
+                    cursor = mysql.connection.cursor()
+                    query = "SELECT id, usuario FROM usuarios WHERE usuario = %s AND activo = 1"
+                    cursor.execute(query, (username.strip(),))
+                    usuario = cursor.fetchone()
+                    cursor.close()
+                    
+                    if usuario:
+                        # TODO: Implementar envío de email real
+                        # Por ahora solo simular el proceso
+                        response_data = {
+                            'success': True,
+                            'message': f'Se ha enviado un enlace de recuperación al correo registrado para {username}'
+                        }
+                    else:
+                        response_data = {
+                            'success': False,
+                            'message': 'Usuario no encontrado'
+                        }
+                except Exception as e:
                     response_data = {
                         'success': False,
-                        'message': 'Usuario no encontrado'
+                        'message': f'Error al verificar usuario: {str(e)}'
                     }
                 
                 return jsonify(response_data) if request.is_json else render_template('auth/forgot_password.html', message=response_data['message'])

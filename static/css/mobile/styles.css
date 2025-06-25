@@ -1,0 +1,86 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(180deg, #71b7f7, #d0e7ff);
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    background-color: #fff;
+    border-radius: 2rem 2rem 0 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 360px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.title {
+    font-size: 2rem;
+    color: #2e3a59;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.illustration img {
+    width: 120px;
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.input-group .icon {
+    position: absolute;
+    top: 50%;
+    left: 0.8rem;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 1rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+    border-radius: 1rem;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 1rem;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+.input-group input:focus {
+    border-color: #4a90e2;
+}
+
+.forgot-password {
+    display: block;
+    margin: 0.8rem 0;
+    color: #444;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.btn-login {
+    width: 100%;
+    background: linear-gradient(90deg, #0f62fe, #0052d4);
+    color: white;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-login:hover {
+    background: linear-gradient(90deg, #0052d4, #0f62fe);
+}

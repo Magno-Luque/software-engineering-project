@@ -34,14 +34,8 @@
                         {% for alerta in alertas %}
                         <div class="alerta-card">
                             <div class="paciente-info">
-                                <div class="nombre-estado-line">
-                                    <h2>{{ alerta.nombre_completo }}</h2>
-                                    <div class="estado-container">
-                                        <span class="detail-label">Estado:</span>
-                                        <span class="alerta-estado">{{ alerta.estado }}</span>
-                                    </div>
-                                </div>
-                                <div class="dni-fecha-line">
+                                <h2>{{ alerta.nombre_completo }}</h2>
+                                <div class="dni-fecha-container"> <!-- Nuevo contenedor -->
                                     <p class="dni">DNI: {{ alerta.dni }}</p>
                                     <span class="alerta-fecha">{{ alerta.fecha.strftime('%d/%m/%Y, %I:%M:%S %p') }}</span>
                                 </div>
@@ -90,11 +84,11 @@
                                     </div>
                                 {% endif %}
                                 
-                                <!-- {% if alerta.nota %}
+                                {% if alerta.nota %}
                                 <div class="alerta-nota">
                                     <p><strong>Nota:</strong> {{ alerta.nota }}</p>
                                 </div>
-                                {% endif %} -->
+                                {% endif %}
                                 
                                 <!-- <div class="alerta-footer">
                                     <p class="fecha-alerta">{{ alerta.fecha.strftime('%d/%m/%Y, %I:%M:%S %p') }}</p>
@@ -102,19 +96,17 @@
                             </div>
                             
                             <div class="alerta-acciones">
-                                <form action="{{ url_for('paramedico.alertas') }}" method="post" onsubmit="return false;">
+                                <form action="{{ url_for('paramedico.alertas') }}" method="post">
                                     <input type="hidden" name="alerta_id" value="{{ alerta.id }}">
-                                    <button type="button" name="accion" value="emergencia" class="btn-emergencia"
-                                            onclick="mostrarModalConfirmacion('emergencia', this.form, '{{ alerta.nombre_completo }}', '{{ alerta.dni }}')">
+                                    <button type="submit" name="accion" value="emergencia" class="btn-emergencia">
                                         <i class="fas fa-ambulance"></i> Emergencia
                                     </button>
-                                    <button type="button" name="accion" value="resolver" class="btn-resolver"
-                                            onclick="mostrarModalConfirmacion('resolver', this.form, '{{ alerta.nombre_completo }}', '{{ alerta.dni }}')">
+                                    <button type="submit" name="accion" value="resolver" class="btn-resolver">
                                         <i class="fas fa-check-circle"></i> Resolver
                                     </button>
-                                    <!-- <button type="button" class="btn-nota" onclick="mostrarModalNota('{{ alerta.id }}')">
+                                    <button type="button" class="btn-nota" onclick="mostrarModalNota('{{ alerta.id }}')">
                                         <i class="fas fa-edit"></i> Nota
-                                    </button> -->
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -143,102 +135,7 @@
         </div>
     </div>
 
-    <!-- Modal de confirmación mejorado -->
-    <div id="modalConfirmacion" class="modal">
-        <div class="modal-content confirmacion-content">
-            <div class="confirmacion-header">
-                <i class="fas fa-check-circle icono-exito"></i>
-                <h3 id="confirmacion-titulo">Confirmar cambio de estado</h3>
-            </div>
-            
-            <div class="confirmacion-body">
-                <p class="confirmacion-texto">Estás a punto de cambiar el estado del paciente:</p>
-                
-                <div class="paciente-info-confirmacion">
-                    <div class="paciente-nombre">
-                        <i class="fas fa-user"></i>
-                        <span id="confirmacion-nombre"></span>
-                    </div>
-                    <div class="paciente-dni">
-                        <i class="fas fa-id-card"></i>
-                        <span>DNI: </span>
-                        <span id="confirmacion-dni"></span>
-                    </div>
-                </div>
-                
-                <div class="nuevo-estado">
-                    <i class="fas fa-exchange-alt"></i>
-                    <span>Nuevo estado: </span>
-                    <strong id="confirmacion-estado">Emergencia</strong>
-                </div>
-            </div>
-            
-            <div class="confirmacion-footer">
-                <button onclick="cerrarModalConfirmacion()" class="btn-cancelar">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-                <button onclick="confirmarAccion()" class="btn-confirmar">
-                    <i class="fas fa-check"></i> Confirmar
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Variables para guardar la acción temporalmente
-        let accionPendiente = null;
-        let formularioPendiente = null;
-        let nombrePaciente = '';
-        let dniPaciente = '';
-
-        function confirmarAccion() {
-            if (formularioPendiente) {
-                // Crear un input oculto con la acción
-                const inputAccion = document.createElement('input');
-                inputAccion.type = 'hidden';
-                inputAccion.name = 'accion';
-                inputAccion.value = accionPendiente;
-                formularioPendiente.appendChild(inputAccion);
-                
-                // Enviar el formulario
-                formularioPendiente.submit();
-            }
-            cerrarModalConfirmacion();
-        }
-
-        function mostrarModalConfirmacion(accion, form, nombre, dni) {
-            accionPendiente = accion;
-            formularioPendiente = form;
-            
-            const modal = document.getElementById('modalConfirmacion');
-            const titulo = document.getElementById('confirmacion-titulo');
-            const nombreElement = document.getElementById('confirmacion-nombre');
-            const dniElement = document.getElementById('confirmacion-dni');
-            const estadoElement = document.getElementById('confirmacion-estado');
-            
-            nombreElement.textContent = nombre;
-            dniElement.textContent = dni;
-            
-            if (accion === 'emergencia') {
-                titulo.textContent = 'Confirmar Emergencia';
-                estadoElement.textContent = 'EMERGENCIA';
-                estadoElement.style.color = 'var(--danger-red)';
-            } else {
-                titulo.textContent = 'Confirmar Resolución';
-                estadoElement.textContent = 'RESUELTO';
-                estadoElement.style.color = 'var(--primary-green)';
-            }
-            
-            modal.style.display = 'block';
-        }
-
-        function cerrarModalConfirmacion() {
-            document.getElementById('modalConfirmacion').style.display = 'none';
-        }
-
-        
-
-        // Función existente para notas
         function mostrarModalNota(alertaId) {
             document.getElementById('alertaIdNota').value = alertaId;
             document.getElementById('modalNota').style.display = 'block';
@@ -247,6 +144,14 @@
         function cerrarModalNota() {
             document.getElementById('modalNota').style.display = 'none';
         }
-</script>
+        
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalNota');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>

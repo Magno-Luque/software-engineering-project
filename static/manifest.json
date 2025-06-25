@@ -1,0 +1,20 @@
+{
+    "name": "MiControl - Recordatorios de Medicamentos",
+    "short_name": "MiControl",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4a76a8",
+    "icons": [
+        {
+            "src": "/static/images/alerta.png", 
+            "sizes": "539x539",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/images/alerta.png",
+            "sizes": "539x539",
+            "type": "image/png"
+        }
+    ]
+}

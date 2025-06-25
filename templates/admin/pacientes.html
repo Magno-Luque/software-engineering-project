@@ -58,31 +58,43 @@
                             <tbody>
                                 {% for paciente in pacientes %}
                                 <tr>
-                                    <td>{{ paciente['id'] }}</td>
-                                    <td>{{ paciente['nombre_completo'] }}</td>
-                                    <td>{{ paciente['dni'] }}</td>
-                                    <td>{{ paciente['edad'] }} años</td>
+                                    <td>{{ paciente.id }}</td>
+                                    <td>{{ paciente.nombre_completo }}</td>
+                                    <td>{{ paciente.dni }}</td>
+                                    <td>{{ paciente.edad }} años</td>
                                     <td>
-                                        {% for enfermedad in paciente.enfermedades %}
-                                        <span class="enfermedad-tag {{ enfermedad|lower }}">{{ enfermedad }}</span>
-                                        {% endfor %}
+                                        {% if paciente.enfermedades %}
+                                            {% for enfermedad in paciente.enfermedades %}
+                                                <span class="enfermedad-tag {{ enfermedad|lower }}">{{ enfermedad }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">Sin enfermedades registradas</span>
+                                        {% endif %}
                                     </td>
                                     <td>
-                                        {% for medico in paciente['medico_asignado'] %}
-                                        <div>{{ medico }}</div>
-                                        {% endfor %}
+                                        {% if paciente.medico_asignado %}
+                                            {% for medico in paciente.medico_asignado %}
+                                                <div>{{ medico }}</div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">Sin médico asignado</span>
+                                        {% endif %}
                                     </td>
-                                    <td><span class="estado">{{ paciente['estado'] }}</span></td>
+                                    <td>
+                                        <span class="estado {% if paciente.estado == 'ACTIVO' %}activo{% else %}inactivo{% endif %}">
+                                            {{ paciente.estado }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn-action btn-view" title="Ver detalles">
+                                            <button class="btn-action btn-view" title="Ver detalles" data-id="{{ paciente.id }}">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="btn-action btn-edit" title="Editar">
+                                            <button class="btn-action btn-edit" title="Editar" data-id="{{ paciente.id }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button class="btn-action btn-toggle {% if paciente.estado == 'ACTIVO' %}active{% else %}inactive{% endif %}" 
-                                                    title="Activar/Desactivar">
+                                                    title="Activar/Desactivar" data-id="{{ paciente.id }}">
                                                 <i class="fas {% if paciente.estado == 'ACTIVO' %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
                                             </button>
                                         </div>

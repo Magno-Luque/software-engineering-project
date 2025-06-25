@@ -1,110 +1,62 @@
 # models/cita.py
 
-from . import db
-from sqlalchemy import asc, desc
 from datetime import datetime, date
-from sqlalchemy.exc import SQLAlchemyError
-from models.admin_horarios import HorarioDisponible
-from models.actores import PacienteEnfermedadMedico, Profesional
 
-class Cita(db.Model):
-    __tablename__ = 'citas'
+class Cita:
+    """Modelo para la tabla citas usando Flask-MySQLdb"""
     
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
-    medico_id = db.Column(db.Integer, db.ForeignKey('profesionales.id'), nullable=False)
-    horario_id = db.Column(db.Integer, db.ForeignKey('horarios_disponibles.id'), nullable=False)
-    enfermedad_id = db.Column(db.Integer, db.ForeignKey('enfermedades.id'), nullable=False)
+    def __init__(self, mysql):
+        self.mysql = mysql
     
-    fecha_cita = db.Column(db.Date, nullable=False)
-    hora_inicio = db.Column(db.Time, nullable=False)
-    hora_fin = db.Column(db.Time, nullable=False)
-    duracion_minutos = db.Column(db.Integer, nullable=False, default=60)
-    tipo = db.Column(db.Enum('PRESENCIAL', 'VIRTUAL'), nullable=False)
-    consultorio = db.Column(db.String(50))
-    
-    especialidad = db.Column(db.String(50), nullable=False)
-    estado = db.Column(db.Enum('AGENDADA', 'ATENDIDA', 'NO_ATENDIDA', 'CANCELADA'), default='AGENDADA')
-    
-    motivo_consulta = db.Column(db.Text)
-    observaciones = db.Column(db.Text)
-    enlace_virtual = db.Column(db.String(255))
-    
-    fecha_creacion = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp())
-    fecha_actualizacion = db.Column(db.TIMESTAMP, server_default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
-    paciente = db.relationship('Paciente', backref='citas', lazy='select')
-    medico = db.relationship('Profesional', backref='citas_asignadas', lazy='select')
-    horario = db.relationship('HorarioDisponible', backref='citas_programadas', lazy='select')
-    enfermedad = db.relationship('Enfermedad', backref='citas_relacionadas', lazy='select')
-    
-    
-    
-    def informacion_cita(self):
-        return {
-            'id': self.id,
-            'paciente_id': self.paciente_id,
-            'medico_id': self.medico_id,
-            'horario_id': self.horario_id,
-            'enfermedad_id': self.enfermedad_id,
-            'fecha_cita': self.fecha_cita.isoformat() if self.fecha_cita else None,
-            'hora_inicio': self.hora_inicio.strftime('%H:%M') if self.hora_inicio else None,
-            'hora_fin': self.hora_fin.strftime('%H:%M') if self.hora_fin else None,
-            'duracion_minutos': self.duracion_minutos,
-            'tipo': self.tipo,
-            'consultorio': self.consultorio,
-            'especialidad': self.especialidad,
-            'estado': self.estado,
-            'motivo_consulta': self.motivo_consulta,
-            'observaciones': self.observaciones,
-            'enlace_virtual': self.enlace_virtual
-        }
-    
-    def __repr__(self):
-        return f'<Cita {self.id}: Paciente {self.paciente_id} - {self.fecha_cita}>'
-    
-    @staticmethod
-    def crear_cita(datos_cita):
-        """Crea una nueva cita y actualiza el horario disponible."""
-        
-        # Validaciones básicas
-        if not datos_cita.get('paciente_id'):
-            return {'success': False, 'error': 'paciente_id requerido'}
-        
-        if not datos_cita.get('horario_id'):
-            return {'success': False, 'error': 'horario_id requerido'}
-            
-        if not datos_cita.get('enfermedad_id'):
-            return {'success': False, 'error': 'enfermedad_id requerido'}
-        
+    @classmethod
+    def crear_cita(cls, mysql, datos_cita):
+        """Crea una nueva cita y actualiza el horario disponible"""
         try:
-            db.session.begin()
+            # Validaciones básicas
+            if not datos_cita.get('paciente_id'):
+                return {'success': False, 'error': 'paciente_id requerido'}
             
-            # Obtener y bloquear el horario
-            horario = HorarioDisponible.query.with_for_update().filter_by(
-                id=datos_cita['horario_id'], 
-                estado='ACTIVO'
-            ).first()
+            if not datos_cita.get('horario_id'):
+                return {'success': False, 'error': 'horario_id requerido'}
+                
+            if not datos_cita.get('enfermedad_id'):
+                return {'success': False, 'error': 'enfermedad_id requerido'}
+            
+            cursor = mysql.connection.cursor()
+            
+            # Obtener y verificar el horario
+            query_horario = """
+                SELECT * FROM horarios_disponibles 
+                WHERE id = %s AND estado = 'ACTIVO'
+            """
+            cursor.execute(query_horario, (datos_cita['horario_id'],))
+            horario = cursor.fetchone()
             
             if not horario:
-                db.session.rollback()
+                cursor.close()
                 return {'success': False, 'error': 'Horario no disponible'}
             
             # Verificar asignación médico-paciente-enfermedad
-            asignacion = PacienteEnfermedadMedico.query.filter_by(
-                paciente_id=datos_cita['paciente_id'],
-                enfermedad_id=datos_cita['enfermedad_id'],
-                estado='ACTIVO'
-            ).first()
+            query_asignacion = """
+                SELECT medico_id FROM paciente_enfermedad_medico 
+                WHERE paciente_id = %s AND enfermedad_id = %s AND estado = 'ACTIVO'
+            """
+            cursor.execute(query_asignacion, (datos_cita['paciente_id'], datos_cita['enfermedad_id']))
+            asignacion = cursor.fetchone()
             
             if not asignacion:
-                db.session.rollback()
-                return {'success': False, 'error': 'No hay médico asignado'}
+                cursor.close()
+                return {'success': False, 'error': 'No hay médico asignado para esta enfermedad'}
             
             # Obtener especialidad del médico
-            profesional = Profesional.query.get(asignacion.medico_id)
+            query_profesional = """
+                SELECT especialidad FROM profesionales WHERE id = %s
+            """
+            cursor.execute(query_profesional, (asignacion['medico_id'],))
+            profesional = cursor.fetchone()
+            
             if not profesional:
-                db.session.rollback()
+                cursor.close()
                 return {'success': False, 'error': 'Médico no encontrado'}
             
             # Crear enlace virtual si es necesario
@@ -113,145 +65,398 @@ class Cita(db.Model):
                 enlace_virtual = f"https://meet.clinic.com/cita-{datos_cita['horario_id']}"
             
             # Crear la cita
-            nueva_cita = Cita(
-                paciente_id=datos_cita['paciente_id'],
-                medico_id=asignacion.medico_id,
-                horario_id=datos_cita['horario_id'],
-                enfermedad_id=datos_cita['enfermedad_id'],
-                fecha_cita=horario.fecha,
-                hora_inicio=horario.hora_inicio,
-                hora_fin=horario.hora_fin,
-                duracion_minutos=datos_cita.get('duracion_minutos', 60),
-                tipo=datos_cita.get('tipo', 'PRESENCIAL'),
-                consultorio=horario.consultorio,
-                especialidad=profesional.especialidad,
-                motivo_consulta=datos_cita.get('motivo_consulta', ''),
-                enlace_virtual=enlace_virtual,
-                estado='AGENDADA'
-            )
+            query_cita = """
+                INSERT INTO citas 
+                (paciente_id, medico_id, horario_id, enfermedad_id, fecha_cita, hora_inicio, hora_fin, 
+                 duracion_minutos, tipo, consultorio, especialidad, motivo_consulta, enlace_virtual, estado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            
+            cursor.execute(query_cita, (
+                datos_cita['paciente_id'],
+                asignacion['medico_id'],
+                datos_cita['horario_id'],
+                datos_cita['enfermedad_id'],
+                horario['fecha'],
+                horario['hora_inicio'],
+                horario['hora_fin'],
+                datos_cita.get('duracion_minutos', 60),
+                datos_cita.get('tipo', 'PRESENCIAL'),
+                horario['consultorio'],
+                profesional['especialidad'],
+                datos_cita.get('motivo_consulta', ''),
+                enlace_virtual,
+                'AGENDADA'
+            ))
+            
+            cita_id = cursor.lastrowid
             
             # Actualizar el horario a INACTIVO
-            horario.estado = 'INACTIVO'
+            query_update_horario = """
+                UPDATE horarios_disponibles 
+                SET estado = 'INACTIVO' 
+                WHERE id = %s
+            """
+            cursor.execute(query_update_horario, (datos_cita['horario_id'],))
             
-            # Guardar cambios
-            db.session.add(nueva_cita)
-            db.session.commit()
+            mysql.connection.commit()
+            cursor.close()
             
+            print(f"Cita creada exitosamente con ID: {cita_id}")
             return {
                 'success': True,
-                'cita_id': nueva_cita.id,
-                'message': f'Cita agendada para el {horario.fecha}'
+                'cita_id': cita_id,
+                'message': f'Cita agendada para el {horario["fecha"]}'
             }
             
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return {'success': False, 'error': f'Error de BD: {str(e)}'}
         except Exception as e:
-            db.session.rollback()
+            mysql.connection.rollback()
+            print(f"Error al crear cita: {str(e)}")
             return {'success': False, 'error': f'Error: {str(e)}'}
     
-    @staticmethod
-    def cancelar_cita(cita_id):
-        """Cancela una cita y libera el horario."""
+    @classmethod
+    def cancelar_cita(cls, mysql, cita_id):
+        """Cancela una cita y libera el horario"""
         try:
-            db.session.begin()
+            cursor = mysql.connection.cursor()
             
-            cita = Cita.query.with_for_update().get(cita_id)
+            # Obtener la cita
+            query_cita = "SELECT * FROM citas WHERE id = %s"
+            cursor.execute(query_cita, (cita_id,))
+            cita = cursor.fetchone()
+            
             if not cita:
-                db.session.rollback()
+                cursor.close()
                 return {'success': False, 'error': 'Cita no encontrada'}
             
-            if cita.estado == 'CANCELADA':
-                db.session.rollback()
+            if cita['estado'] == 'CANCELADA':
+                cursor.close()
                 return {'success': False, 'error': 'Cita ya cancelada'}
             
             # Liberar el horario
-            horario = HorarioDisponible.query.with_for_update().get(cita.horario_id)
-            if horario:
-                horario.estado = 'ACTIVO'
+            query_liberar_horario = """
+                UPDATE horarios_disponibles 
+                SET estado = 'ACTIVO' 
+                WHERE id = %s
+            """
+            cursor.execute(query_liberar_horario, (cita['horario_id'],))
             
             # Cancelar la cita
-            cita.estado = 'CANCELADA'
+            query_cancelar = """
+                UPDATE citas 
+                SET estado = 'CANCELADA', fecha_actualizacion = CURRENT_TIMESTAMP 
+                WHERE id = %s
+            """
+            cursor.execute(query_cancelar, (cita_id,))
             
-            db.session.commit()
-            return {'success': True, 'message': 'Cita cancelada'}
+            mysql.connection.commit()
+            cursor.close()
+            
+            print(f"Cita {cita_id} cancelada exitosamente")
+            return {'success': True, 'message': 'Cita cancelada exitosamente'}
             
         except Exception as e:
-            db.session.rollback()
+            mysql.connection.rollback()
+            print(f"Error al cancelar cita: {str(e)}")
             return {'success': False, 'error': f'Error: {str(e)}'}
     
-    @staticmethod
-    def obtener_cita(cita_id):
-        """Obtiene una cita por ID."""
+    @classmethod
+    def obtener_cita(cls, mysql, cita_id):
+        """Obtiene una cita por ID con información completa"""
         try:
-            cita = Cita.query.get(cita_id)
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.id = %s
+            """
+            
+            cursor.execute(query, (cita_id,))
+            cita = cursor.fetchone()
+            cursor.close()
+            
             if not cita:
                 return {'success': False, 'error': 'Cita no encontrada'}
             
             return {'success': True, 'cita': cita}
+            
         except Exception as e:
+            print(f"Error al obtener cita: {str(e)}")
             return {'success': False, 'error': f'Error: {str(e)}'}
     
-    @staticmethod
-    def obtener_citas_hoy():
-        """
-        Obtiene citas agendadas para el día actual.
-        
-        Returns:
-            list: Citas ordenadas por hora de inicio ascendente
+    @classmethod
+    def obtener_citas_hoy(cls, mysql):
+        """Obtiene citas agendadas para el día actual"""
+        try:
+            cursor = mysql.connection.cursor()
+            hoy = date.today()
             
-        Notas:
-            - Filtra por fecha actual del sistema (date.today())
-            - Ordena de la cita más temprana a la más tardía
-        """
-        hoy = date.today()
-        return Cita.query.filter(Cita.fecha_cita == hoy).order_by(asc(Cita.hora_inicio)).all()
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.fecha_cita = %s
+                ORDER BY c.hora_inicio ASC
+            """
+            
+            cursor.execute(query, (hoy,))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas de hoy: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_por_horario(cls, mysql, horario_id):
+        """Obtiene todas las citas asociadas a un horario específico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                WHERE c.horario_id = %s
+                ORDER BY c.fecha_creacion DESC
+            """
+            
+            cursor.execute(query, (horario_id,))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas por horario: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_activas_por_horario(cls, mysql, horario_id):
+        """Obtiene solo las citas agendadas (no canceladas) de un horario"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                WHERE c.horario_id = %s AND c.estado = 'AGENDADA'
+                ORDER BY c.fecha_cita, c.hora_inicio
+            """
+            
+            cursor.execute(query, (horario_id,))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas activas por horario: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_por_paciente(cls, mysql, paciente_id, estado=None):
+        """Obtiene citas de un paciente específico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       prof.especialidad, e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN profesionales prof ON c.medico_id = prof.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.paciente_id = %s
+            """
+            params = [paciente_id]
+            
+            if estado:
+                query += " AND c.estado = %s"
+                params.append(estado)
+            
+            query += " ORDER BY c.fecha_cita DESC, c.hora_inicio DESC"
+            
+            cursor.execute(query, params)
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas por paciente: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_por_medico(cls, mysql, medico_id, fecha_desde=None, fecha_hasta=None):
+        """Obtiene citas de un médico específico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.medico_id = %s
+            """
+            params = [medico_id]
+            
+            if fecha_desde:
+                query += " AND c.fecha_cita >= %s"
+                params.append(fecha_desde)
+            
+            if fecha_hasta:
+                query += " AND c.fecha_cita <= %s"
+                params.append(fecha_hasta)
+            
+            query += " ORDER BY c.fecha_cita DESC, c.hora_inicio DESC"
+            
+            cursor.execute(query, params)
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas por médico: {str(e)}")
+            return []
+    
+    @classmethod
+    def actualizar_estado_cita(cls, mysql, cita_id, nuevo_estado, observaciones=None):
+        """Actualiza el estado de una cita"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                UPDATE citas 
+                SET estado = %s, fecha_actualizacion = CURRENT_TIMESTAMP
+            """
+            params = [nuevo_estado]
+            
+            if observaciones:
+                query += ", observaciones = %s"
+                params.append(observaciones)
+            
+            query += " WHERE id = %s"
+            params.append(cita_id)
+            
+            cursor.execute(query, params)
+            
+            if cursor.rowcount == 0:
+                cursor.close()
+                return {'success': False, 'error': 'Cita no encontrada'}
+            
+            mysql.connection.commit()
+            cursor.close()
+            
+            print(f"Estado de cita {cita_id} actualizado a {nuevo_estado}")
+            return {'success': True, 'message': f'Estado actualizado a {nuevo_estado}'}
+            
+        except Exception as e:
+            mysql.connection.rollback()
+            print(f"Error al actualizar estado de cita: {str(e)}")
+            return {'success': False, 'error': f'Error: {str(e)}'}
+    
+    @classmethod
+    def obtener_estadisticas_citas(cls, mysql, fecha_desde=None, fecha_hasta=None):
+        """Obtiene estadísticas de citas"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query_base = """
+                SELECT 
+                    COUNT(*) as total_citas,
+                    SUM(CASE WHEN estado = 'AGENDADA' THEN 1 ELSE 0 END) as agendadas,
+                    SUM(CASE WHEN estado = 'ATENDIDA' THEN 1 ELSE 0 END) as atendidas,
+                    SUM(CASE WHEN estado = 'NO_ATENDIDA' THEN 1 ELSE 0 END) as no_atendidas,
+                    SUM(CASE WHEN estado = 'CANCELADA' THEN 1 ELSE 0 END) as canceladas
+                FROM citas 
+                WHERE 1=1
+            """
+            params = []
+            
+            if fecha_desde:
+                query_base += " AND fecha_cita >= %s"
+                params.append(fecha_desde)
+            
+            if fecha_hasta:
+                query_base += " AND fecha_cita <= %s"
+                params.append(fecha_hasta)
+            
+            cursor.execute(query_base, params)
+            estadisticas = cursor.fetchone()
+            cursor.close()
+            
+            return estadisticas
+            
+        except Exception as e:
+            print(f"Error al obtener estadísticas de citas: {str(e)}")
+            return None
     
     @staticmethod
-    def obtener_citas_por_horario(horario_id):
-        """
-        Obtiene todas las citas asociadas a un horario específico.
-        
-        Args:
-            horario_id (int): ID del horario
-            
-        Returns:
-            list: Lista de citas del horario
-        """
-        return Cita.query.filter_by(horario_id=horario_id).all()
-    
-    @staticmethod
-    def obtener_citas_activas_por_horario(horario_id):
-        """
-        Obtiene solo las citas agendadas (no canceladas) de un horario.
-        
-        Args:
-            horario_id (int): ID del horario
-            
-        Returns:
-            list: Lista de citas activas del horario
-        """
-        return Cita.query.filter(
-            Cita.horario_id == horario_id,
-            Cita.estado == 'AGENDADA'
-        ).all()
-    
-    @property
-    def duracion_formateada(self):
-        """
-        Retorna la duración de la cita en formato legible.
-        """
-        if self.duracion_minutos >= 60:
-            horas = self.duracion_minutos // 60
-            minutos = self.duracion_minutos % 60
+    def formatear_duracion(duracion_minutos):
+        """Retorna la duración de la cita en formato legible"""
+        if duracion_minutos >= 60:
+            horas = duracion_minutos // 60
+            minutos = duracion_minutos % 60
             if minutos > 0:
                 return f"{horas}h {minutos}min"
             return f"{horas}h"
-        return f"{self.duracion_minutos}min"
+        return f"{duracion_minutos}min"
     
-    @property
-    def horario_completo(self):
-        """
-        Retorna el horario completo de la cita en formato legible.
-        """
-        return f"{self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')}"
+    @staticmethod
+    def formatear_horario_completo(hora_inicio, hora_fin):
+        """Retorna el horario completo de la cita en formato legible"""
+        if isinstance(hora_inicio, str):
+            return f"{hora_inicio} - {hora_fin}"
+        else:
+            return f"{hora_inicio.strftime('%H:%M')} - {hora_fin.strftime('%H:%M')}"
+    
+    @staticmethod
+    def informacion_cita(cita_data):
+        """Convierte los datos de cita a formato estructurado"""
+        return {
+            'id': cita_data['id'],
+            'paciente_id': cita_data['paciente_id'],
+            'medico_id': cita_data['medico_id'],
+            'horario_id': cita_data['horario_id'],
+            'enfermedad_id': cita_data['enfermedad_id'],
+            'fecha_cita': cita_data['fecha_cita'].isoformat() if isinstance(cita_data['fecha_cita'], date) else str(cita_data['fecha_cita']),
+            'hora_inicio': cita_data['hora_inicio'].strftime('%H:%M') if hasattr(cita_data['hora_inicio'], 'strftime') else str(cita_data['hora_inicio']),
+            'hora_fin': cita_data['hora_fin'].strftime('%H:%M') if hasattr(cita_data['hora_fin'], 'strftime') else str(cita_data['hora_fin']),
+            'duracion_minutos': cita_data['duracion_minutos'],
+            'tipo': cita_data['tipo'],
+            'consultorio': cita_data['consultorio'],
+            'especialidad': cita_data['especialidad'],
+            'estado': cita_data['estado'],
+            'motivo_consulta': cita_data['motivo_consulta'],
+            'observaciones': cita_data['observaciones'],
+            'enlace_virtual': cita_data['enlace_virtual'],
+            'paciente_nombre': cita_data.get('paciente_nombres', '') + ' ' + cita_data.get('paciente_apellidos', ''),
+            'medico_nombre': cita_data.get('medico_nombres', '') + ' ' + cita_data.get('medico_apellidos', ''),
+            'enfermedad_nombre': cita_data.get('enfermedad_nombre', '')
+        }

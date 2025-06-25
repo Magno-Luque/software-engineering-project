@@ -1,8 +1,7 @@
 # controllers/admin_profesionales.py
 
-from models.actores import db, Paciente, Profesional, Cuidador, PacienteEnfermedadMedico, Enfermedad
+from models.actores import Paciente, Profesional, Cuidador, PacienteEnfermedadMedico, Enfermedad
 from datetime import datetime, date
-from sqlalchemy import or_, desc, func
 import re
 import json
 
@@ -10,182 +9,238 @@ def obtener_profesionales():
     """
     Obtiene todos los profesionales con datos básicos para la vista principal
     """
-    profesionales = Profesional.query.filter(Profesional.estado == 'ACTIVO').all()
-    
-    resultado = []
-    for prof in profesionales:
-        # Contar pacientes asignados desde la tabla intermedia
-        pacientes_asignados = db.session.query(PacienteEnfermedadMedico)\
-            .filter(PacienteEnfermedadMedico.medico_id == prof.id)\
-            .filter(PacienteEnfermedadMedico.estado == 'ACTIVO')\
-            .count()
+    try:
+        from app import mysql
         
-        # Formatear horarios
-        horario_formateado = formatear_horario_atencion(prof.horario_atencion)
+        profesionales = Profesional.obtener_todos_activos(mysql)
         
-        resultado.append({
-            'id': prof.id,
-            'nombre_completo': f"{prof.nombres} {prof.apellidos}",
-            'dni': prof.dni,
-            'especialidad': prof.especialidad,
-            'rol': prof.rol,
-            'horario_atencion': horario_formateado,
-            'pacientes_asignados': pacientes_asignados,
-            'email': prof.email,
-            'telefono': prof.telefono,
-            'estado': prof.estado,
-            'fecha_registro': prof.fecha_registro.strftime('%d/%m/%Y') if prof.fecha_registro else 'No registrada'
-        })
-    
-    return resultado
+        resultado = []
+        for prof in profesionales:
+            # Contar pacientes asignados desde la tabla intermedia
+            cursor = mysql.connection.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM paciente_enfermedad_medico 
+                WHERE medico_id = %s AND estado = 'ACTIVO'
+            """, (prof['id'],))
+            pacientes_count = cursor.fetchone()['count']
+            cursor.close()
+            
+            # Formatear horarios
+            horario_formateado = formatear_horario_atencion(prof.get('horario_atencion'))
+            
+            resultado.append({
+                'id': prof['id'],
+                'nombre_completo': f"{prof['nombres']} {prof['apellidos']}",
+                'dni': prof['dni'],
+                'especialidad': prof['especialidad'],
+                'rol': prof['rol'],
+                'horario_atencion': horario_formateado,
+                'pacientes_asignados': pacientes_count,
+                'email': prof.get('email', ''),
+                'telefono': prof.get('telefono', ''),
+                'estado': prof['estado'],
+                'fecha_registro': prof['fecha_registro'].strftime('%d/%m/%Y') if hasattr(prof['fecha_registro'], 'strftime') else 'No registrada'
+            })
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"Error en obtener_profesionales: {str(e)}")
+        return []
 
 def obtener_profesionales_con_filtros(especialidad=None, rol=None, estado=None, busqueda=None, page=1, per_page=10):
     """
     Obtiene profesionales aplicando filtros y paginación
     """
-    query = Profesional.query
-    
-    # Filtro por especialidad
-    if especialidad and especialidad != 'todas':
-        especialidad_map = {
-            'cardiologia': 'CARDIOLOGÍA',
-            'medicina-interna': 'MEDICINA INTERNA',
-            'endocrinologia': 'ENDOCRINOLOGÍA',
-            'psicologia': 'PSICOLOGÍA CLÍNICA',
-            'neumologia': 'NEUMOLOGÍA'
-        }
-        if especialidad in especialidad_map:
-            query = query.filter(Profesional.especialidad == especialidad_map[especialidad])
-    
-    # Filtro por rol
-    if rol and rol != 'todos':
-        rol_map = {
-            'medico': 'MÉDICO',
-            'psicologo': 'PSICÓLOGO'
-        }
-        if rol in rol_map:
-            query = query.filter(Profesional.rol == rol_map[rol])
-    
-    # Filtro por estado
-    if estado and estado != 'todos':
-        query = query.filter(Profesional.estado == estado.upper())
-    
-    # Filtro de búsqueda (nombre o DNI)
-    if busqueda:
-        busqueda_like = f"%{busqueda}%"
-        query = query.filter(
-            or_(
-                Profesional.nombres.ilike(busqueda_like),
-                Profesional.apellidos.ilike(busqueda_like),
-                Profesional.dni.like(busqueda_like)
-            )
-        )
-    
-    # Ordenar por fecha de registro descendente
-    query = query.order_by(desc(Profesional.fecha_registro))
-    
-    # Aplicar paginación
-    resultado = query.paginate(page=page, per_page=per_page, error_out=False)
-    
-    # Formatear datos para la vista
-    profesionales_formateados = []
-    for prof in resultado.items:
-        # Contar pacientes asignados
-        pacientes_asignados = db.session.query(PacienteEnfermedadMedico)\
-            .filter(PacienteEnfermedadMedico.medico_id == prof.id)\
-            .filter(PacienteEnfermedadMedico.estado == 'ACTIVO')\
-            .count()
+    try:
+        from app import mysql
+        cursor = mysql.connection.cursor()
         
-        profesionales_formateados.append({
-            'id': prof.id,
-            'nombre_completo': f"{prof.nombres} {prof.apellidos}",
-            'dni': prof.dni,
-            'especialidad': prof.especialidad,
-            'rol': prof.rol,
-            'horario_atencion': formatear_horario_atencion(prof.horario_atencion),
-            'pacientes_asignados': pacientes_asignados,
-            'email': prof.email,
-            'telefono': prof.telefono,
-            'estado': prof.estado,
-            'fecha_registro': prof.fecha_registro.strftime('%d/%m/%Y') if prof.fecha_registro else 'No registrada'
-        })
-    
-    return {
-        'profesionales': profesionales_formateados,
-        'total': resultado.total,
-        'pages': resultado.pages,
-        'current_page': resultado.page,
-        'per_page': resultado.per_page,
-        'has_prev': resultado.has_prev,
-        'has_next': resultado.has_next
-    }
+        # Construir query base
+        query = """
+            SELECT * FROM profesionales 
+            WHERE 1=1
+        """
+        params = []
+        
+        # Filtro por especialidad
+        if especialidad and especialidad != 'todas':
+            especialidad_map = {
+                'cardiologia': 'CARDIOLOGÍA',
+                'medicina-interna': 'MEDICINA INTERNA',
+                'endocrinologia': 'ENDOCRINOLOGÍA',
+                'psicologia': 'PSICOLOGÍA CLÍNICA',
+                'neumologia': 'NEUMOLOGÍA'
+            }
+            if especialidad in especialidad_map:
+                query += " AND especialidad = %s"
+                params.append(especialidad_map[especialidad])
+        
+        # Filtro por rol
+        if rol and rol != 'todos':
+            rol_map = {
+                'medico': 'MÉDICO',
+                'psicologo': 'PSICÓLOGO'
+            }
+            if rol in rol_map:
+                query += " AND rol = %s"
+                params.append(rol_map[rol])
+        
+        # Filtro por estado
+        if estado and estado != 'todos':
+            query += " AND estado = %s"
+            params.append(estado.upper())
+        
+        # Filtro de búsqueda (nombre o DNI)
+        if busqueda:
+            query += " AND (nombres LIKE %s OR apellidos LIKE %s OR dni LIKE %s)"
+            busqueda_like = f"%{busqueda}%"
+            params.extend([busqueda_like, busqueda_like, busqueda_like])
+        
+        # Contar total de registros
+        count_query = query.replace("SELECT *", "SELECT COUNT(*)")
+        cursor.execute(count_query, params)
+        total = cursor.fetchone()['COUNT(*)']
+        
+        # Aplicar ordenamiento y paginación
+        query += " ORDER BY fecha_registro DESC"
+        offset = (page - 1) * per_page
+        query += " LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
+        
+        cursor.execute(query, params)
+        profesionales = cursor.fetchall()
+        
+        # Formatear datos para la vista
+        profesionales_formateados = []
+        for prof in profesionales:
+            # Contar pacientes asignados
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM paciente_enfermedad_medico 
+                WHERE medico_id = %s AND estado = 'ACTIVO'
+            """, (prof['id'],))
+            pacientes_count = cursor.fetchone()['count']
+            
+            profesionales_formateados.append({
+                'id': prof['id'],
+                'nombre_completo': f"{prof['nombres']} {prof['apellidos']}",
+                'dni': prof['dni'],
+                'especialidad': prof['especialidad'],
+                'rol': prof['rol'],
+                'horario_atencion': formatear_horario_atencion(prof.get('horario_atencion')),
+                'pacientes_asignados': pacientes_count,
+                'email': prof.get('email', ''),
+                'telefono': prof.get('telefono', ''),
+                'estado': prof['estado'],
+                'fecha_registro': prof['fecha_registro'].strftime('%d/%m/%Y') if hasattr(prof['fecha_registro'], 'strftime') else 'No registrada'
+            })
+        
+        cursor.close()
+        
+        return {
+            'profesionales': profesionales_formateados,
+            'total': total,
+            'pages': (total + per_page - 1) // per_page,
+            'current_page': page,
+            'per_page': per_page,
+            'has_prev': page > 1,
+            'has_next': page < ((total + per_page - 1) // per_page)
+        }
+        
+    except Exception as e:
+        print(f"Error en obtener_profesionales_con_filtros: {str(e)}")
+        return {
+            'profesionales': [],
+            'total': 0,
+            'pages': 0,
+            'current_page': page,
+            'per_page': per_page,
+            'has_prev': False,
+            'has_next': False
+        }
 
 def obtener_profesional_por_id(profesional_id):
     """
     Obtiene datos completos de un profesional específico
     """
-    profesional = Profesional.query.get(profesional_id)
-    if not profesional:
+    try:
+        from app import mysql
+        
+        profesional = Profesional.obtener_por_id(mysql, profesional_id)
+        if not profesional:
+            return None
+        
+        cursor = mysql.connection.cursor()
+        
+        # Obtener pacientes asignados con detalles
+        query_pacientes = """
+            SELECT pem.*, p.nombres as paciente_nombres, p.apellidos as paciente_apellidos, 
+                   p.dni as paciente_dni, e.nombre as enfermedad_nombre, pem.fecha_asignacion, pem.observaciones
+            FROM paciente_enfermedad_medico pem
+            JOIN pacientes p ON pem.paciente_id = p.id
+            JOIN enfermedades e ON pem.enfermedad_id = e.id
+            WHERE pem.medico_id = %s AND pem.estado = 'ACTIVO'
+            ORDER BY pem.fecha_asignacion DESC
+        """
+        
+        cursor.execute(query_pacientes, (profesional_id,))
+        pacientes_asignados = cursor.fetchall()
+        cursor.close()
+        
+        # Formatear pacientes asignados
+        pacientes_detalle = []
+        for asignacion in pacientes_asignados:
+            pacientes_detalle.append({
+                'id': asignacion['paciente_id'],
+                'nombre_completo': f"{asignacion['paciente_nombres']} {asignacion['paciente_apellidos']}",
+                'dni': asignacion['paciente_dni'],
+                'enfermedad': asignacion['enfermedad_nombre'],
+                'fecha_asignacion': asignacion['fecha_asignacion'].strftime('%d/%m/%Y') if hasattr(asignacion['fecha_asignacion'], 'strftime') else str(asignacion['fecha_asignacion']),
+                'observaciones': asignacion.get('observaciones', '')
+            })
+        
+        return {
+            'id': profesional['id'],
+            'dni': profesional['dni'],
+            'nombres': profesional['nombres'],
+            'apellidos': profesional['apellidos'],
+            'nombre_completo': f"{profesional['nombres']} {profesional['apellidos']}",
+            'especialidad': profesional['especialidad'],
+            'rol': profesional['rol'],
+            'telefono': profesional.get('telefono', ''),
+            'email': profesional.get('email', ''),
+            'horario_atencion': profesional.get('horario_atencion'),
+            'pacientes_asignados_count': len(pacientes_detalle),
+            'pacientes_asignados': pacientes_detalle,
+            'estado': profesional['estado'],
+            'fecha_registro': profesional['fecha_registro'].strftime('%d/%m/%Y %H:%M') if hasattr(profesional['fecha_registro'], 'strftime') else 'No registrada'
+        }
+        
+    except Exception as e:
+        print(f"Error en obtener_profesional_por_id: {str(e)}")
         return None
-    
-    # Obtener pacientes asignados con detalles
-    pacientes_asignados = db.session.query(
-        PacienteEnfermedadMedico, Paciente, Enfermedad
-    ).join(
-        Paciente, PacienteEnfermedadMedico.paciente_id == Paciente.id
-    ).join(
-        Enfermedad, PacienteEnfermedadMedico.enfermedad_id == Enfermedad.id
-    ).filter(
-        PacienteEnfermedadMedico.medico_id == profesional_id
-    ).filter(
-        PacienteEnfermedadMedico.estado == 'ACTIVO'
-    ).all()
-    
-    # Formatear pacientes asignados
-    pacientes_detalle = []
-    for asignacion, paciente, enfermedad in pacientes_asignados:
-        pacientes_detalle.append({
-            'id': paciente.id,
-            'nombre_completo': f"{paciente.nombres} {paciente.apellidos}",
-            'dni': paciente.dni,
-            'enfermedad': enfermedad.nombre,
-            'fecha_asignacion': asignacion.fecha_asignacion.strftime('%d/%m/%Y'),
-            'observaciones': asignacion.observaciones
-        })
-    
-    return {
-        'id': profesional.id,
-        'dni': profesional.dni,
-        'nombres': profesional.nombres,
-        'apellidos': profesional.apellidos,
-        'nombre_completo': f"{profesional.nombres} {profesional.apellidos}",
-        'especialidad': profesional.especialidad,
-        'rol': profesional.rol,
-        'telefono': profesional.telefono,
-        'email': profesional.email,
-        'horario_atencion': profesional.horario_atencion,
-        'pacientes_asignados_count': len(pacientes_detalle),
-        'pacientes_asignados': pacientes_detalle,
-        'estado': profesional.estado,
-        'fecha_registro': profesional.fecha_registro.strftime('%d/%m/%Y %H:%M') if profesional.fecha_registro else 'No registrada'
-    }
 
 def crear_nuevo_profesional(datos):
     """
     Crea un nuevo profesional con los datos proporcionados
     """
     try:
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
         # Validar que el DNI no exista
-        profesional_existente = Profesional.query.filter_by(dni=datos['dni']).first()
-        if profesional_existente:
+        cursor.execute("SELECT id FROM profesionales WHERE dni = %s", (datos['dni'],))
+        if cursor.fetchone():
+            cursor.close()
             return {
                 'success': False,
                 'message': 'Ya existe un profesional con este DNI'
             }
         
         # Validar que el email no exista
-        email_existente = Profesional.query.filter_by(email=datos['email']).first()
-        if email_existente:
+        cursor.execute("SELECT id FROM profesionales WHERE email = %s", (datos['email'],))
+        if cursor.fetchone():
+            cursor.close()
             return {
                 'success': False,
                 'message': 'Ya existe un profesional con este email'
@@ -193,31 +248,40 @@ def crear_nuevo_profesional(datos):
         
         # Procesar horarios de atención
         horarios = procesar_horarios_atencion(datos.get('horarios', {}))
+        horarios_json = json.dumps(horarios) if horarios else None
         
         # Crear el profesional
-        nuevo_profesional = Profesional(
-            dni=datos['dni'],
-            nombres=datos['nombres'],
-            apellidos=datos['apellidos'],
-            especialidad=datos['especialidad'],
-            rol=datos['rol'],
-            telefono=datos.get('telefono'),
-            email=datos['email'],
-            horario_atencion=horarios,
-            estado='ACTIVO'
-        )
+        query = """
+            INSERT INTO profesionales 
+            (dni, nombres, apellidos, especialidad, rol, telefono, email, horario_atencion, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
         
-        db.session.add(nuevo_profesional)
-        db.session.commit()
+        cursor.execute(query, (
+            datos['dni'],
+            datos['nombres'],
+            datos['apellidos'],
+            datos['especialidad'],
+            datos['rol'],
+            datos.get('telefono'),
+            datos['email'],
+            horarios_json,
+            'ACTIVO'
+        ))
+        
+        mysql.connection.commit()
+        profesional_id = cursor.lastrowid
+        cursor.close()
         
         return {
             'success': True,
             'message': 'Profesional creado exitosamente',
-            'profesional_id': nuevo_profesional.id
+            'profesional_id': profesional_id
         }
         
     except Exception as e:
-        db.session.rollback()
+        mysql.connection.rollback()
+        print(f"Error en crear_nuevo_profesional: {str(e)}")
         return {
             'success': False,
             'message': f'Error al crear profesional: {str(e)}'
@@ -228,46 +292,66 @@ def actualizar_profesional(profesional_id, datos):
     Actualiza los datos de un profesional existente
     """
     try:
-        profesional = Profesional.query.get(profesional_id)
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
+        # Verificar que el profesional existe
+        cursor.execute("SELECT * FROM profesionales WHERE id = %s", (profesional_id,))
+        profesional = cursor.fetchone()
         if not profesional:
+            cursor.close()
             return {'success': False, 'message': 'Profesional no encontrado'}
         
         # Validar DNI único (excluyendo el profesional actual)
-        dni_existente = Profesional.query.filter(
-            Profesional.dni == datos['dni'],
-            Profesional.id != profesional_id
-        ).first()
-        if dni_existente:
+        cursor.execute("SELECT id FROM profesionales WHERE dni = %s AND id != %s", (datos['dni'], profesional_id))
+        if cursor.fetchone():
+            cursor.close()
             return {'success': False, 'message': 'El DNI ya está registrado por otro profesional'}
         
         # Validar email único (excluyendo el profesional actual)
-        email_existente = Profesional.query.filter(
-            Profesional.email == datos['email'],
-            Profesional.id != profesional_id
-        ).first()
-        if email_existente:
+        cursor.execute("SELECT id FROM profesionales WHERE email = %s AND id != %s", (datos['email'], profesional_id))
+        if cursor.fetchone():
+            cursor.close()
             return {'success': False, 'message': 'El email ya está registrado por otro profesional'}
         
-        # Actualizar campos
-        profesional.dni = datos.get('dni', profesional.dni)
-        profesional.nombres = datos.get('nombres', profesional.nombres)
-        profesional.apellidos = datos.get('apellidos', profesional.apellidos)
-        profesional.especialidad = datos.get('especialidad', profesional.especialidad)
-        profesional.rol = datos.get('rol', profesional.rol)
-        profesional.telefono = datos.get('telefono', profesional.telefono)
-        profesional.email = datos.get('email', profesional.email)
-        
-        # Actualizar horarios si se proporcionan
+        # Procesar horarios si se proporcionan
+        horarios_json = None
         if 'horarios' in datos:
             horarios = procesar_horarios_atencion(datos['horarios'])
-            profesional.horario_atencion = horarios
+            horarios_json = json.dumps(horarios) if horarios else None
         
-        db.session.commit()
+        # Actualizar profesional
+        query = """
+            UPDATE profesionales 
+            SET dni = %s, nombres = %s, apellidos = %s, especialidad = %s, 
+                rol = %s, telefono = %s, email = %s
+        """
+        params = [
+            datos.get('dni', profesional['dni']),
+            datos.get('nombres', profesional['nombres']),
+            datos.get('apellidos', profesional['apellidos']),
+            datos.get('especialidad', profesional['especialidad']),
+            datos.get('rol', profesional['rol']),
+            datos.get('telefono', profesional.get('telefono')),
+            datos.get('email', profesional['email'])
+        ]
+        
+        if horarios_json is not None:
+            query += ", horario_atencion = %s"
+            params.append(horarios_json)
+        
+        query += " WHERE id = %s"
+        params.append(profesional_id)
+        
+        cursor.execute(query, params)
+        mysql.connection.commit()
+        cursor.close()
         
         return {'success': True, 'message': 'Profesional actualizado exitosamente'}
         
     except Exception as e:
-        db.session.rollback()
+        mysql.connection.rollback()
+        print(f"Error en actualizar_profesional: {str(e)}")
         return {'success': False, 'message': f'Error al actualizar profesional: {str(e)}'}
 
 def cambiar_estado_profesional(profesional_id):
@@ -275,15 +359,23 @@ def cambiar_estado_profesional(profesional_id):
     Cambia el estado de un profesional entre ACTIVO/INACTIVO
     """
     try:
-        profesional = Profesional.query.get(profesional_id)
-        if not profesional:
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
+        # Obtener estado actual
+        cursor.execute("SELECT estado FROM profesionales WHERE id = %s", (profesional_id,))
+        resultado = cursor.fetchone()
+        
+        if not resultado:
+            cursor.close()
             return {'success': False, 'message': 'Profesional no encontrado'}
         
         # Cambiar estado
-        nuevo_estado = 'INACTIVO' if profesional.estado == 'ACTIVO' else 'ACTIVO'
-        profesional.estado = nuevo_estado
+        nuevo_estado = 'INACTIVO' if resultado['estado'] == 'ACTIVO' else 'ACTIVO'
+        cursor.execute("UPDATE profesionales SET estado = %s WHERE id = %s", (nuevo_estado, profesional_id))
         
-        db.session.commit()
+        mysql.connection.commit()
+        cursor.close()
         
         return {
             'success': True,
@@ -292,35 +384,63 @@ def cambiar_estado_profesional(profesional_id):
         }
         
     except Exception as e:
-        db.session.rollback()
+        mysql.connection.rollback()
+        print(f"Error en cambiar_estado_profesional: {str(e)}")
         return {'success': False, 'message': f'Error al cambiar estado: {str(e)}'}
 
 def obtener_estadisticas_profesionales():
     """
     Obtiene estadísticas generales de profesionales
     """
-    total_profesionales = Profesional.query.count()
-    profesionales_activos = Profesional.query.filter_by(estado='ACTIVO').count()
-    
-    # Estadísticas por especialidad
-    especialidades = db.session.query(
-        Profesional.especialidad,
-        func.count(Profesional.id).label('count')
-    ).group_by(Profesional.especialidad).all()
-    
-    # Estadísticas por rol
-    roles = db.session.query(
-        Profesional.rol,
-        func.count(Profesional.id).label('count')
-    ).group_by(Profesional.rol).all()
-    
-    return {
-        'total_profesionales': total_profesionales,
-        'profesionales_activos': profesionales_activos,
-        'profesionales_inactivos': total_profesionales - profesionales_activos,
-        'por_especialidad': [{'especialidad': esp, 'count': count} for esp, count in especialidades],
-        'por_rol': [{'rol': rol, 'count': count} for rol, count in roles]
-    }
+    try:
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
+        # Total de profesionales
+        cursor.execute("SELECT COUNT(*) as total FROM profesionales")
+        total_profesionales = cursor.fetchone()['total']
+        
+        # Profesionales activos
+        cursor.execute("SELECT COUNT(*) as activos FROM profesionales WHERE estado = 'ACTIVO'")
+        profesionales_activos = cursor.fetchone()['activos']
+        
+        # Estadísticas por especialidad
+        cursor.execute("""
+            SELECT especialidad, COUNT(*) as count 
+            FROM profesionales 
+            GROUP BY especialidad 
+            ORDER BY count DESC
+        """)
+        especialidades = cursor.fetchall()
+        
+        # Estadísticas por rol
+        cursor.execute("""
+            SELECT rol, COUNT(*) as count 
+            FROM profesionales 
+            GROUP BY rol 
+            ORDER BY count DESC
+        """)
+        roles = cursor.fetchall()
+        
+        cursor.close()
+        
+        return {
+            'total_profesionales': total_profesionales,
+            'profesionales_activos': profesionales_activos,
+            'profesionales_inactivos': total_profesionales - profesionales_activos,
+            'por_especialidad': [{'especialidad': esp['especialidad'], 'count': esp['count']} for esp in especialidades],
+            'por_rol': [{'rol': rol['rol'], 'count': rol['count']} for rol in roles]
+        }
+        
+    except Exception as e:
+        print(f"Error en obtener_estadisticas_profesionales: {str(e)}")
+        return {
+            'total_profesionales': 0,
+            'profesionales_activos': 0,
+            'profesionales_inactivos': 0,
+            'por_especialidad': [],
+            'por_rol': []
+        }
 
 # Funciones auxiliares
 

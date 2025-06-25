@@ -1,12 +1,16 @@
-# app.py
-
 from flask import Flask, render_template, url_for, request, redirect, flash, jsonify, session
+from flask_mysqldb import MySQL
 from functools import wraps
 from config.config import Config
 from datetime import datetime, date
-from models import db
 from controllers.inicio_sesion import AuthController
-from controllers.admin_dashboard import obtener_resumen_dashboard, obtener_pacientes_recientes #, obtener_citas_hoy
+
+# ########################################################
+from controllers.admin_dashboard import (
+    obtener_resumen_dashboard, 
+    obtener_pacientes_recientes, 
+    obtener_citas_hoy
+)
 from controllers.admin_pacientes import (
     obtener_pacientes,
     obtener_pacientes_con_filtros, 
@@ -51,15 +55,10 @@ from controllers.admin_citas_medicas import (
     obtener_citas_con_filtros,
     obtener_medicos_para_filtro,
     obtener_estadisticas_citas,
-    obtener_citas_hoy,
     obtener_detalle_cita,
     cancelar_cita_admin,
     actualizar_estado_cita
 )
-
-################################################################################
-################################################################################
-
 
 # ==============================================================================
 # INICIALIZACIÓN DE LA APLICACIÓN
@@ -67,8 +66,8 @@ from controllers.admin_citas_medicas import (
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Inicializa la base de datos con la aplicación
-db.init_app(app)
+# Inicializar MySQL con Flask-MySQLdb
+mysql = MySQL(app)
 
 # ==============================================================================
 # DECORADORES DE AUTENTICACIÓN
@@ -102,7 +101,7 @@ def role_required(*allowed_roles):
     return decorator
 
 # ==============================================================================
-# RUTAS DE AUTENTICACIÓN (Agregar estas rutas a tu app.py)
+# RUTAS DE AUTENTICACIÓN
 # ==============================================================================
 
 @app.route('/auth/login', methods=['GET', 'POST'])
@@ -142,7 +141,6 @@ def home():
         return redirect(url_for(f"{session['user_role']}_dashboard"))
     return redirect(url_for('login'))
 
-# Ruta para servir la página de login desktop
 @app.route('/auth/desktop')
 def desktop_login():
     """Página de login para escritorio"""
@@ -166,8 +164,8 @@ def admin_dashboard():
                            citas_de_hoy=citas_de_hoy)
 
 @app.route('/admin/pacientes')
-@login_required
-@role_required('admin')
+# @login_required
+# @role_required('admin')
 def admin_pacientes():
     """Gestión de pacientes (listado/edición)"""
     pacientes = obtener_pacientes()
@@ -212,8 +210,8 @@ def admin_pacientes_api():
     return jsonify(resultado)
 
 @app.route('/admin/pacientes/api/medicos', methods=['GET']) 
-@login_required
-@role_required('admin')
+# @login_required
+# @role_required('admin')
 def admin_pacientes_medicos_api():
     """API para obtener lista de médicos para asignación"""
     medicos = obtener_medicos_para_asignacion()
@@ -222,7 +220,7 @@ def admin_pacientes_medicos_api():
 @app.route('/admin/pacientes/api/crear', methods=['POST'])
 @login_required
 @role_required('admin')
-def admin_pacientes_crear_api():
+def admin_pacientes_crear_api(): 
     """API para crear un nuevo paciente"""
     datos = request.get_json()
     resultado = crear_nuevo_paciente(datos)
@@ -379,7 +377,6 @@ def admin_citas():
                          profesionales_activos=profesionales_activos,
                          citas_recientes=citas_recientes,
                          estadisticas=estadisticas_citas)
-    
 
 @app.route('/admin/citas/api/listar')
 @login_required
@@ -554,14 +551,14 @@ def admin_citas_hoy_api():
             'citas': [],
             'total': 0
         }), 500
-    
-    
-###########################
-##########################
+
+# ==============================================================================
+# API PARA GESTIÓN DE HORARIOS (ADMIN - PROTEGIDAS)
+# ==============================================================================
 
 @app.route('/admin/horarios/semana')
-# @login_required
-# @role_required('admin')
+@login_required
+@role_required('admin')
 def api_obtener_horarios_semana():
     """API para obtener horarios de una semana específica."""
     try:
@@ -625,8 +622,8 @@ def api_crear_horario():
         }), 500
 
 @app.route('/admin/horarios/<int:horario_id>')
-# @login_required
-# @role_required('admin')
+@login_required
+@role_required('admin')
 def api_obtener_detalle_horario(horario_id):
     """API para obtener detalles de un horario específico."""
     try:
@@ -656,7 +653,6 @@ def api_actualizar_horario(horario_id):
             }), 400
         
         datos_horario = request.get_json()
-        
         datos_horario['horario_id'] = horario_id
         
         resultado = actualizar_horario_disponible(datos_horario)
@@ -730,7 +726,7 @@ def api_obtener_estadisticas_horarios():
         }), 500
 
 # ==============================================================================
-# RUTAS PARA MÉDICO (PROTEGIDAS)
+# RUTAS PARA OTROS ROLES (PROTEGIDAS)
 # ==============================================================================
 
 @app.route('/medico/dashboard')
@@ -740,45 +736,6 @@ def medico_dashboard():
     """Panel principal para médicos"""
     return render_template('medico/dashboard.html')
 
-@app.route('/medico/mis_pacientes')
-@login_required
-@role_required('medico')
-def medico_mis_pacientes():
-    """Listado de pacientes asignados al médico"""
-    return render_template('medico/mis_pacientes.html')
-
-@app.route('/medico/alertas_criticas')
-@login_required
-@role_required('medico')
-def medico_alertas_criticas():
-    """Visualización de alertas médicas críticas"""
-    return render_template('medico/alertas_criticas.html')
-
-@app.route('/medico/consultas_virtuales')
-@login_required
-@role_required('medico')
-def medico_consultas_virtuales():
-    """Gestión de consultas virtuales"""
-    return render_template('medico/consultas_virtuales.html')
-
-@app.route('/medico/mi_calendario')
-@login_required
-@role_required('medico')
-def medico_mi_calendario():
-    """Calendario personal de citas del médico"""
-    return render_template('medico/mi_calendario.html')
-
-@app.route('/medico/graficos_pacientes')
-@login_required
-@role_required('medico')
-def medico_graficos_pacientes():
-    """Estadísticas y gráficos de evolución de pacientes"""
-    return render_template('medico/graficos_pacientes.html')
-
-# ==============================================================================
-# RUTAS PARA PSICÓLOGO (PROTEGIDAS)
-# ==============================================================================
-
 @app.route('/psicologo/dashboard')
 @login_required
 @role_required('psicologo')
@@ -786,31 +743,91 @@ def psicologo_dashboard():
     """Panel principal para psicólogos"""
     return render_template('psicologo/dashboard.html')
 
-@app.route('/psicologo/pacientes')
-@login_required
-@role_required('psicologo')
-def psicologo_pacientes():
-    """Gestión de pacientes asignados al psicólogo"""
-    return render_template('psicologo/pacientes.html')
-
-# ==============================================================================
-# RUTAS PARA PACIENTE (PROTEGIDAS)
-# ==============================================================================
-
+# ======================
+# Rutas para Paciente
+# ======================
 @app.route('/paciente/dashboard')
-@login_required
-@role_required('paciente')
 def paciente_dashboard():
-    """Panel principal para pacientes."""
-    # resumen_info = obtener_resumen_dashboard_paciente()
-    # return render_template('paciente/dashboard.html', resumen_info=resumen_info)
     return render_template('paciente/dashboard.html')
+########################
+from controllers.registro_triaje import biometrico_bp
+app.register_blueprint(biometrico_bp)
+
+@app.route('/paciente/datos_biometricos')
+def paciente_datos_biometricos():
+    return redirect(url_for('triaje.datos_biometricos'))
+
+from controllers.registro_infoadicional import infoadicional_bp
+app.register_blueprint(infoadicional_bp)
+
+@app.route('/paciente/actividad_fisica')
+def paciente_actividad_fisica():
+    return redirect(url_for('infoadicional.informacion_adicional'))
+
+from controllers.lista_medicamentos import medicamentos_bp
+app.register_blueprint(medicamentos_bp)
+
+@app.route('/paciente/medicamentos')
+def paciente_medicamentos():
+    return redirect(url_for('medicamentos.listar_medicamentos'))
+
+from controllers.lista_alertascritica import alertas_bp
+app.register_blueprint(alertas_bp)
+
+@app.route('/paciente/alertas_criticas')
+def paciente_alertas_criticas():
+    return redirect(url_for('alertas.listar_alertascritica'))
+
+@app.route('/paciente/cita')
+def paciente_cita():
+    return render_template('paciente/cita.html')
+
+@app.route('/paciente/educacion_en_salud')
+def paciente_educacion_en_salud():
+    return render_template('paciente/educacionSalud.html')
+
+@app.route('/paciente/foro')
+def paciente_foro():
+    return render_template('paciente/foro.html')
+
+# ======================
+# Rutas para Paramedico
+# ======================
+from controllers.lista_alertascriticaParamedico import paramedico_bp
+app.register_blueprint(paramedico_bp)
+
+@app.route('/paramedico/alertas_criticas')
+def paramedico_alertas_criticas():
+    return redirect(url_for('paramedico.alertas'))
+
+@app.route('/paramedico/agregar_nota_alerta')
+def paramedico_agregar_nota():
+    return redirect(url_for('paramedico.agregar_nota_alerta'))
+
+@app.route('/paramedico/dashboard')
+def paramedico_dashboard():
+    return render_template('paramedico/dashboard.html')
+
+# ==============================================================================
+# API PARA CUIDADORES (EJEMPLO)
+# ==============================================================================
+
+@app.route('/cuidador/dashboard')
+@login_required
+@role_required('cuidador')
+def cuidador_dashboard():
+    """Panel principal para cuidadores"""
+    return render_template('cuidador/dashboard.html')
+
+# ==============================================================================
+# API PARA CREAR CITAS (EJEMPLO)
+# ==============================================================================
 
 @app.route('/admin/citas/crear', methods=['POST'])
-#@login_required
-#@role_required('paciente')
+@login_required
+@role_required('admin', 'paciente')
 def paciente_crear_cita_api():
-    """API para crear una nueva cita como paciente."""
+    """API para crear una nueva cita."""
     try:
         if not request.is_json:
             return jsonify({
@@ -837,185 +854,6 @@ def paciente_crear_cita_api():
             'exito': False,
             'error': f'Error interno: {str(e)}'
         }), 500
-        
-# ==============================================================================
-# RUTAS ADICIONALES PARA PACIENTE (AGREGAR DESPUÉS DE paciente_dashboard)
-# ==============================================================================
-
-@app.route('/paciente/medicamentos')
-@login_required
-@role_required('paciente')
-def paciente_medicamentos():
-    """Gestión de medicamentos del paciente"""
-    return render_template('paciente/medicamentos.html')
-
-@app.route('/paciente/datos_biometricos')
-@login_required
-@role_required('paciente')
-def paciente_datos_biometricos():
-    """Registro de datos biométricos del paciente"""
-    return render_template('paciente/datos_biometricos.html')
-
-@app.route('/paciente/mis_citas')
-@login_required
-@role_required('paciente')
-def paciente_mis_citas():
-    """Gestión de citas del paciente"""
-    return render_template('paciente/mis_citas.html')
-
-@app.route('/paciente/chat_medico')
-@login_required
-@role_required('paciente')
-def paciente_chat_medico():
-    """Chat con el médico asignado"""
-    return render_template('paciente/chat_medico.html')
-
-@app.route('/paciente/configuracion')
-@login_required
-@role_required('paciente')
-def paciente_configuracion():
-    """Configuración de la cuenta del paciente"""
-    return render_template('paciente/configuracion.html')
-
-@app.route('/paciente/alertas_criticas')
-@login_required
-@role_required('paciente')
-def paciente_alertas_criticas():
-    """Visualización de alertas médicas críticas del paciente"""
-    return render_template('paciente/alertas_criticas.html')
-
-@app.route('/paciente/actividad_fisica')
-@login_required
-@role_required('paciente')
-def paciente_actividad_fisica():
-    """Registro y seguimiento de actividad física y dieta"""
-    return render_template('paciente/actividad_fisica.html')
-
-@app.route('/paciente/cita')
-@login_required
-@role_required('paciente')
-def paciente_cita():
-    """Gestión de citas médicas del paciente"""
-    return render_template('paciente/cita.html')
-
-@app.route('/paciente/educacion_en_salud')
-@login_required
-@role_required('paciente')
-def paciente_educacion_en_salud():
-    """Recursos educativos sobre salud"""
-    return render_template('paciente/educacion_en_salud.html')
-
-@app.route('/paciente/foro')
-@login_required
-@role_required('paciente')
-def paciente_foro():
-    """Foro de discusión para pacientes"""
-    return render_template('paciente/foro.html')
-
-
-
-# @app.route('/paciente/citas/<int:cita_id>')
-# @login_required
-# @role_required('paciente')
-# def paciente_obtener_cita_api(cita_id):
-#     """API para obtener una cita específica del paciente."""
-    # try:
-        # resultado = obtener_cita_paciente(cita_id)
-        
-    #     if resultado['exito']:
-    #         return jsonify(resultado)
-    #     else:
-    #         status_code = 403 if 'autorización' in resultado['error'] else 404
-    #         return jsonify(resultado), status_code
-            
-    # except Exception as e:
-    #     return jsonify({
-    #         'exito': False,
-    #         'error': f'Error interno: {str(e)}'
-    #     }), 500
-
-# @app.route('/paciente/citas/<int:cita_id>/cancelar', methods=['PUT'])
-# @login_required
-# @role_required('paciente')
-# def paciente_cancelar_cita_api(cita_id):
-#     """API para cancelar una cita del paciente."""
-#     try:
-#         resultado = cancelar_cita_paciente(cita_id)
-        
-#         if resultado['exito']:
-#             return jsonify(resultado)
-#         else:
-#             status_code = 403 if 'autorización' in resultado['error'] else 400
-#             return jsonify(resultado), status_code
-            
-#     except Exception as e:
-#         return jsonify({
-#             'exito': False,
-#             'error': f'Error interno: {str(e)}'
-#         }), 500
-
-# @app.route('/paciente/mis-citas')
-# @login_required
-# @role_required('paciente')
-# def paciente_listar_citas_api():
-#     """API para listar todas las citas del paciente."""
-#     try:
-#         estado_filtro = request.args.get('estado')
-        
-#         resultado = listar_citas_paciente(estado_filtro)
-        
-#         if resultado['exito']:
-#             return jsonify(resultado)
-#         else:
-#             return jsonify(resultado), 400
-            
-#     except Exception as e:
-#         return jsonify({
-#             'exito': False,
-#             'error': f'Error interno: {str(e)}'
-#         }), 500
-
-# Crear ejemplo para usar thunder client
-datos = {
-    'paciente_id': 26,
-    'horario_id': 66,
-    'enfermedad_id': 1,
-    'tipo': 'PRESENCIAL',
-    'motivo_consulta': 'Consulta de seguimiento para diabetes'
-}
-
-
-# ==============================================================================
-# RUTAS PARA ADMIN - CITAS (OPCIONAL)
-# ==============================================================================
-
-# @app.route('/admin/citas', methods=['GET'])
-# @login_required
-# @role_required('admin')
-# def admin_ver_citas():
-#     """Listar todas las citas"""
-#     return admin_listar_citas()
-
-# @app.route('/admin/citas/<int:cita_id>', methods=['GET'])
-# @login_required
-# @role_required('admin')
-# def admin_ver_cita(cita_id):
-#     """Ver cualquier cita"""
-#     return obtener_cita_admin(cita_id)
-
-
-# ==============================================================================
-# RUTAS PARA CUIDADOR (PROTEGIDAS)
-# ==============================================================================
-
-@app.route('/cuidador/dashboard')
-@login_required
-@role_required('cuidador')
-def cuidador_dashboard():
-    """Panel principal para cuidadores"""
-    return render_template('cuidador/dashboard.html')
-
-
 
 # ==============================================================================
 # EJECUCIÓN PRINCIPAL

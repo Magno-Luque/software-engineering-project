@@ -1,86 +1,132 @@
 # controllers/admin_pacientes.py
 
-# from models.admin_pacientes import Paciente, Profesional, Cuidador
-from models.actores import db, Paciente, Profesional, Cuidador, PacienteEnfermedadMedico, Enfermedad
+from models.actores import Paciente, Profesional, Cuidador, PacienteEnfermedadMedico, Enfermedad
 from datetime import datetime, date
 import re
 
 def obtener_pacientes_con_filtros(estado=None, medico_id=None, fecha_desde=None, fecha_hasta=None, busqueda=None, page=1, per_page=10):
     """
-    FUNCIÓN  - Obtiene pacientes aplicando filtros y paginación
+    Obtiene pacientes aplicando filtros y paginación
     """
-    # Convertir fechas si vienen como string
-    if fecha_desde:
-        fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
-    if fecha_hasta:
-        fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
-    
-    # 
-    resultado = Paciente.obtener_todos_con_filtros_nuevo(
-        estado=estado,
-        medico_id=medico_id,
-        fecha_desde=fecha_desde,
-        fecha_hasta=fecha_hasta,
-        busqueda=busqueda,
-        page=page,
-        per_page=per_page
-    )
-    
-    # Formatear datos para la vista
-    pacientes_formateados = []
-    for paciente in resultado.items:
-        # 
-        medicos_asignados = db.session.query(PacienteEnfermedadMedico, Profesional)\
-            .join(Profesional, PacienteEnfermedadMedico.medico_id == Profesional.id)\
-            .filter(PacienteEnfermedadMedico.paciente_id == paciente.id)\
-            .filter(PacienteEnfermedadMedico.estado == 'ACTIVO')\
-            .all()
+    try:
+        from app import mysql
         
-        medicos_nombres = []
-        if medicos_asignados:
-            for asignacion, medico in medicos_asignados:
-                medicos_nombres.append(f"Dr. {medico.nombres} {medico.apellidos}")
+        # Convertir fechas si vienen como string
+        if fecha_desde:
+            fecha_desde = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+        if fecha_hasta:
+            fecha_hasta = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
         
-        medico_asignado_str = ", ".join(medicos_nombres) if medicos_nombres else "Sin asignar"
+        # Usar el método del modelo con MySQL
+        resultado = Paciente.obtener_todos_con_filtros(
+            mysql=mysql,
+            estado=estado,
+            medico_id=medico_id,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            busqueda=busqueda,
+            page=page,
+            per_page=per_page
+        )
         
-        pacientes_formateados.append({
-            'id': paciente.id,
-            'dni': paciente.dni,
-            'nombre_completo': paciente.nombre_completo,
-            'edad': f"{paciente.edad} años" if paciente.edad else "No definida",
-            'enfermedades': paciente.enfermedades_lista,
-            'medico_asignado': medico_asignado_str,  #
-            'fecha_registro': paciente.fecha_registro.strftime('%d/%m/%Y'),
-            'estado': paciente.estado,
-            'tiene_cuidador': paciente.tiene_cuidador
-        })
-    
-    return {
-        'pacientes': pacientes_formateados,
-        'total': resultado.total,
-        'pages': resultado.pages,
-        'current_page': resultado.page,
-        'per_page': resultado.per_page,
-        'has_prev': resultado.has_prev,
-        'has_next': resultado.has_next
-    }
+        # Formatear datos para la vista
+        pacientes_formateados = []
+        for paciente in resultado['items']:
+            # Obtener médicos asignados para este paciente
+            asignaciones = PacienteEnfermedadMedico.obtener_asignaciones_paciente(mysql, paciente['id'])
+            
+            medicos_nombres = []
+            for asignacion in asignaciones:
+                medicos_nombres.append(f"Dr. {asignacion['medico_nombres']} {asignacion['medico_apellidos']}")
+            
+            medico_asignado_str = ", ".join(medicos_nombres) if medicos_nombres else "Sin asignar"
+            
+            # Calcular edad
+            edad = Paciente.calcular_edad(paciente['fecha_nacimiento']) if paciente.get('fecha_nacimiento') else None
+            
+            pacientes_formateados.append({
+                'id': paciente['id'],
+                'dni': paciente['dni'],
+                'nombre_completo': f"{paciente['nombres']} {paciente['apellidos']}",
+                'edad': f"{edad} años" if edad else "No definida",
+                'enfermedades': paciente.get('enfermedades', []),
+                'medico_asignado': medico_asignado_str,
+                'fecha_registro': paciente['fecha_registro'].strftime('%d/%m/%Y') if hasattr(paciente['fecha_registro'], 'strftime') else str(paciente['fecha_registro']),
+                'estado': paciente['estado'],
+                'tiene_cuidador': len(Cuidador.obtener_por_paciente(mysql, paciente['id'])) > 0
+            })
+        
+        return {
+            'pacientes': pacientes_formateados,
+            'total': resultado['total'],
+            'pages': resultado['pages'],
+            'current_page': resultado['page'],
+            'per_page': resultado['per_page'],
+            'has_prev': resultado['page'] > 1,
+            'has_next': resultado['page'] < resultado['pages']
+        }
+        
+    except Exception as e:
+        print(f"Error en obtener_pacientes_con_filtros: {str(e)}")
+        return {
+            'pacientes': [],
+            'total': 0,
+            'pages': 0,
+            'current_page': page,
+            'per_page': per_page,
+            'has_prev': False,
+            'has_next': False
+        }
 
 def obtener_medicos_para_asignacion():
     """
     Obtiene lista de médicos activos para asignación
     """
-    medicos = Profesional.obtener_medicos_activos()
-    return [{
-        'id': medico.id,
-        'nombre_formal': medico.nombre_formal, 
-        'especialidad': medico.especialidad
-    } for medico in medicos]
+    try:
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
+        query = """
+            SELECT id, nombres, apellidos, especialidad 
+            FROM profesionales 
+            WHERE rol = 'MÉDICO' AND estado = 'ACTIVO'
+            ORDER BY nombres, apellidos
+        """
+        cursor.execute(query)
+        medicos = cursor.fetchall()
+        cursor.close()
+        
+        # Verificar si es diccionario o tupla y manejar apropiadamente
+        resultado = []
+        for medico in medicos:
+            if isinstance(medico, dict):
+                # Si es diccionario (DictCursor configurado)
+                resultado.append({
+                    'id': medico['id'],
+                    'nombre_formal': f"Dr. {medico['nombres']} {medico['apellidos']}",
+                    'especialidad': medico['especialidad']
+                })
+            else:
+                # Si es tupla (cursor normal)
+                resultado.append({
+                    'id': medico[0],  # id
+                    'nombre_formal': f"Dr. {medico[1]} {medico[2]}",  # nombres apellidos
+                    'especialidad': medico[3]  # especialidad
+                })
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"Error en obtener_medicos_para_asignacion: {str(e)}")
+        return []
 
 def crear_nuevo_paciente(datos):
     """
-    FUNCIÓN  - Crea un nuevo paciente con los datos proporcionados
+    Crea un nuevo paciente con los datos proporcionados
     """
     try:
+        from app import mysql
+        
         # Convertir fecha de nacimiento
         fecha_nacimiento = datetime.strptime(datos['fecha_nacimiento'], '%Y-%m-%d').date()
         
@@ -89,192 +135,235 @@ def crear_nuevo_paciente(datos):
         if isinstance(enfermedades, str):
             enfermedades = [enfermedades]
         
-        # 
-        nuevo_paciente = Paciente.crear_paciente_nuevo( 
+        # Crear el paciente usando el método del modelo
+        paciente_id = Paciente.crear_paciente_nuevo(
+            mysql=mysql,
             dni=datos['dni'],
             nombres=datos['nombres'],
             apellidos=datos['apellidos'],
             fecha_nacimiento=fecha_nacimiento,
             email=datos.get('email'),
-            telefono=datos.get('telefono'),  # 
+            telefono=datos.get('telefono'),
             direccion=datos.get('direccion'),
-            enfermedades = datos.get('enfermedades', []),
-            medicos_asignados = datos.get('medicos_asignados', {})
+            enfermedades=enfermedades,
+            medicos_asignados=datos.get('medicos_asignados', {})
         )
-        print(nuevo_paciente)
+        
         return {
             'success': True,
             'message': 'Paciente creado exitosamente',
-            'paciente_id': nuevo_paciente.id
+            'paciente_id': paciente_id
         }
     except Exception as e:
+        print(f"Error en crear_nuevo_paciente: {str(e)}")
         return {
             'success': False,
             'message': f'Error al crear paciente: {str(e)}'
         }
-    
+
 def obtener_pacientes():
     """
-     FUNCIÓN  - Obtiene pacientes con sus médicos asignados
+    Obtiene pacientes con sus médicos asignados
     """
-    pacientes = Paciente.obtener_todos_pacientes()
-    
-    resultado = []
-    for p in pacientes:
-        # 
-        medicos_asignados = db.session.query(PacienteEnfermedadMedico, Profesional)\
-            .join(Profesional, PacienteEnfermedadMedico.medico_id == Profesional.id)\
-            .filter(PacienteEnfermedadMedico.paciente_id == p.id)\
-            .filter(PacienteEnfermedadMedico.estado == 'ACTIVO')\
-            .all()
+    try:
+        from app import mysql
+        pacientes = Paciente.obtener_todos_pacientes(mysql)
         
-        # 
-        medicos_nombres = []
-        if medicos_asignados:
-            for asignacion, medico in medicos_asignados:
-                medicos_nombres.append(f"Dr. {medico.nombre_formal}")
+        resultado = []
+        for p in pacientes:
+            # Obtener médicos asignados para este paciente
+            asignaciones = PacienteEnfermedadMedico.obtener_asignaciones_paciente(mysql, p['id'])
+            
+            medicos_nombres = []
+            for asignacion in asignaciones:
+                medicos_nombres.append(f"Dr. {asignacion['medico_nombres']} {asignacion['medico_apellidos']}")
+            
+            # Calcular edad
+            edad = Paciente.calcular_edad(p['fecha_nacimiento']) if p.get('fecha_nacimiento') else None
+            
+            # Procesar enfermedades - convertir de JSON a lista si es necesario
+            enfermedades_lista = []
+            if p.get('enfermedades'):
+                if isinstance(p['enfermedades'], str):
+                    # Si es string JSON, convertir a lista
+                    import json
+                    try:
+                        enfermedades_lista = json.loads(p['enfermedades'])
+                    except:
+                        enfermedades_lista = [p['enfermedades']]
+                elif isinstance(p['enfermedades'], list):
+                    enfermedades_lista = p['enfermedades']
+                else:
+                    enfermedades_lista = []
+            
+            resultado.append({
+                'id': p['id'],
+                'nombre_completo': f"{p['nombres']} {p['apellidos']}",
+                'edad': edad,
+                'dni': p['dni'],
+                'enfermedades': enfermedades_lista,  # Asegurar que sea una lista
+                'medico_asignado': medicos_nombres,
+                'estado': p['estado']
+            })
+
+        return resultado
         
-        resultado.append({
-            'id': p.id,
-            'nombre_completo': p.nombre_completo,
-            'edad': p.edad,
-            'dni': p.dni,
-            'enfermedades': p.enfermedades_lista,
-            'medico_asignado': medicos_nombres,  # 
-            'estado': p.estado
-        })
-
-    return resultado
-
-    
-    
+    except Exception as e:
+        print(f"Error en obtener_pacientes: {str(e)}")
+        return []
 
 def obtener_paciente_por_id(paciente_id):
     """
-    FUNCIÓN  - Obtiene datos completos de un paciente específico
-    """
-    paciente = Paciente.query.get(paciente_id)
-    if not paciente:
-        return None
-    
-    # NUEVO: Obtener médicos asignados con enfermedades
-    asignaciones_medicas = db.session.query(PacienteEnfermedadMedico, Profesional, Enfermedad)\
-        .join(Profesional, PacienteEnfermedadMedico.medico_id == Profesional.id)\
-        .join(Enfermedad, PacienteEnfermedadMedico.enfermedad_id == Enfermedad.id)\
-        .filter(PacienteEnfermedadMedico.paciente_id == paciente_id)\
-        .filter(PacienteEnfermedadMedico.estado == 'ACTIVO')\
-        .all()
-    
-    # FORMATEAR: Médicos asignados por enfermedad
-    medicos_asignados = []
-    for asignacion, medico, enfermedad in asignaciones_medicas:
-        medicos_asignados.append({
-            'id': medico.id,
-            'nombre': f"Dr. {medico.nombres} {medico.apellidos}",
-            'especialidad': medico.especialidad,
-            'enfermedad': enfermedad.nombre,
-            'observaciones': asignacion.observaciones
-        })
-    
-    return {
-        'id': paciente.id,
-        'dni': paciente.dni,
-        'nombres': paciente.nombres,
-        'apellidos': paciente.apellidos,
-        'nombre_completo': paciente.nombre_completo,
-        'fecha_nacimiento': paciente.fecha_nacimiento.strftime('%Y-%m-%d'),
-        'edad': paciente.edad,
-        'email': paciente.email,
-        'telefono': paciente.telefono,
-        'direccion': paciente.direccion,
-        'enfermedades': paciente.enfermedades_lista,
-        'estado': paciente.estado,
-        'fecha_registro': paciente.fecha_registro.strftime('%d/%m/%Y %H:%M'),
-        'medicos_asignados': medicos_asignados,  # 
-        'cuidadores': [{
-            'id': cuidador.id,
-            'nombre_completo': cuidador.nombre_completo,
-            'dni': cuidador.dni,
-            'telefono': cuidador.telefono,
-            'relacion': cuidador.relacion_paciente,
-            'estado': cuidador.estado
-        } for cuidador in paciente.cuidadores]
-    }
-
-# def actualizar_paciente(paciente_id, datos):
-def actualizar_paciente(paciente_id, datos, medico_id=None):
-    """
-    FUNCIÓN: Actualiza los datos de un paciente existente
+    Obtiene datos completos de un paciente específico
     """
     try:
-        paciente = Paciente.query.get(paciente_id)
+        from app import mysql
+        
+        paciente = Paciente.obtener_por_id(mysql, paciente_id)
+        if not paciente:
+            return None
+        
+        # Obtener asignaciones médicas
+        asignaciones_medicas = PacienteEnfermedadMedico.obtener_asignaciones_paciente(mysql, paciente_id)
+        
+        # Formatear médicos asignados por enfermedad
+        medicos_asignados = []
+        for asignacion in asignaciones_medicas:
+            medicos_asignados.append({
+                'id': asignacion['medico_id'],
+                'nombre': f"Dr. {asignacion['medico_nombres']} {asignacion['medico_apellidos']}",
+                'especialidad': asignacion['especialidad'],
+                'enfermedad': asignacion['enfermedad_nombre'],
+                'observaciones': asignacion.get('observaciones', '')
+            })
+        
+        # Obtener cuidadores
+        cuidadores = Cuidador.obtener_por_paciente(mysql, paciente_id)
+        
+        # Calcular edad
+        edad = Paciente.calcular_edad(paciente['fecha_nacimiento']) if paciente.get('fecha_nacimiento') else None
+        
+        return {
+            'id': paciente['id'],
+            'dni': paciente['dni'],
+            'nombres': paciente['nombres'],
+            'apellidos': paciente['apellidos'],
+            'nombre_completo': f"{paciente['nombres']} {paciente['apellidos']}",
+            'fecha_nacimiento': paciente['fecha_nacimiento'].strftime('%Y-%m-%d') if hasattr(paciente['fecha_nacimiento'], 'strftime') else str(paciente['fecha_nacimiento']),
+            'edad': edad,
+            'email': paciente.get('email', ''),
+            'telefono': paciente.get('telefono', ''),
+            'direccion': paciente.get('direccion', ''),
+            'enfermedades': paciente.get('enfermedades', []),
+            'estado': paciente['estado'],
+            'fecha_registro': paciente['fecha_registro'].strftime('%d/%m/%Y %H:%M') if hasattr(paciente['fecha_registro'], 'strftime') else str(paciente['fecha_registro']),
+            'medicos_asignados': medicos_asignados,
+            'cuidadores': [{
+                'id': cuidador['id'],
+                'nombre_completo': cuidador['nombre_completo'],
+                'dni': cuidador['dni'],
+                'telefono': cuidador['telefono'],
+                'relacion': cuidador['relacion_paciente'],
+                'estado': cuidador['estado']
+            } for cuidador in cuidadores]
+        }
+        
+    except Exception as e:
+        print(f"Error en obtener_paciente_por_id: {str(e)}")
+        return None
+
+def actualizar_paciente(paciente_id, datos, medico_id=None):
+    """
+    Actualiza los datos de un paciente existente
+    """
+    try:
+        from app import mysql
+        cursor = mysql.connection.cursor()
+        
+        # Verificar que el paciente existe
+        paciente = Paciente.obtener_por_id(mysql, paciente_id)
         if not paciente:
             return {'success': False, 'message': 'Paciente no encontrado'}
         
-        # Actualizar campos básicos del paciente
-        paciente.nombres = datos.get('nombres', paciente.nombres)
-        paciente.apellidos = datos.get('apellidos', paciente.apellidos)
-        paciente.email = datos.get('email', paciente.email)
-        paciente.telefono = datos.get('telefono', paciente.telefono)
-        paciente.direccion = datos.get('direccion', paciente.direccion)
+        # Preparar datos para actualización
+        query = """
+            UPDATE pacientes 
+            SET nombres = %s, apellidos = %s, email = %s, telefono = %s, direccion = %s
+        """
+        params = [
+            datos.get('nombres', paciente['nombres']),
+            datos.get('apellidos', paciente['apellidos']),
+            datos.get('email', paciente.get('email')),
+            datos.get('telefono', paciente.get('telefono')),
+            datos.get('direccion', paciente.get('direccion'))
+        ]
         
+        # Actualizar fecha de nacimiento si se proporciona
         if 'fecha_nacimiento' in datos:
-            paciente.fecha_nacimiento = datetime.strptime(datos['fecha_nacimiento'], '%Y-%m-%d').date()
+            query += ", fecha_nacimiento = %s"
+            fecha_nacimiento = datetime.strptime(datos['fecha_nacimiento'], '%Y-%m-%d').date()
+            params.append(fecha_nacimiento)
         
-        # Actualizar enfermedades y tabla de relación
+        query += " WHERE id = %s"
+        params.append(paciente_id)
+        
+        cursor.execute(query, params)
+        
+        # Actualizar enfermedades y relaciones médicas si se proporcionan
         if 'enfermedades' in datos and medico_id:
             enfermedades = datos['enfermedades']
             if isinstance(enfermedades, str):
                 enfermedades = [enfermedades]
             
-            # 1. ELIMINAR asignaciones existentes para este paciente y médico
-            PacienteEnfermedadMedico.query.filter_by(
-                paciente_id=paciente_id,
-                medico_id=medico_id
-            ).delete()
+            # Eliminar asignaciones existentes para este paciente y médico
+            cursor.execute("""
+                DELETE FROM paciente_enfermedad_medico 
+                WHERE paciente_id = %s AND medico_id = %s
+            """, (paciente_id, medico_id))
             
-            # 2. INSERTAR nuevas asignaciones
+            # Insertar nuevas asignaciones
             for enfermedad_id in enfermedades:
-                nueva_asignacion = PacienteEnfermedadMedico(
-                    paciente_id=paciente_id,
-                    enfermedad_id=enfermedad_id,
-                    medico_id=medico_id,
-                    estado='ACTIVO',
-                    observaciones=datos.get('observaciones', None)
-                )
-                db.session.add(nueva_asignacion)
+                cursor.execute("""
+                    INSERT INTO paciente_enfermedad_medico 
+                    (paciente_id, enfermedad_id, medico_id, estado, observaciones)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (paciente_id, enfermedad_id, medico_id, 'ACTIVO', datos.get('observaciones')))
             
-            # Actualizar el campo enfermedades del paciente (si lo tienes)
-            paciente.enfermedades = enfermedades
+            # Actualizar campo enfermedades en la tabla pacientes
+            import json
+            cursor.execute("""
+                UPDATE pacientes SET enfermedades = %s WHERE id = %s
+            """, (json.dumps(enfermedades), paciente_id))
         
-        # Confirmar todos los cambios
-        db.session.commit()
+        mysql.connection.commit()
+        cursor.close()
         
         return {'success': True, 'message': 'Paciente actualizado exitosamente'}
         
     except Exception as e:
-        db.session.rollback()  # Revertir cambios en caso de error
+        mysql.connection.rollback()
+        print(f"Error en actualizar_paciente: {str(e)}")
         return {'success': False, 'message': f'Error al actualizar paciente: {str(e)}'}
-
-
 
 def cambiar_estado_paciente(paciente_id):
     """
     Cambia el estado de un paciente entre ACTIVO/INACTIVO
     """
     try:
-        paciente = Paciente.query.get(paciente_id)
-        if not paciente:
+        from app import mysql
+        
+        nuevo_estado = Paciente.actualizar_estado(mysql, paciente_id)
+        if nuevo_estado:
+            return {
+                'success': True,
+                'message': f'Estado del paciente cambiado a {nuevo_estado}',
+                'nuevo_estado': nuevo_estado
+            }
+        else:
             return {'success': False, 'message': 'Paciente no encontrado'}
-        
-        nuevo_estado = paciente.actualizar_estado()
-        
-        return {
-            'success': True,
-            'message': f'Estado del paciente cambiado a {nuevo_estado}',
-            'nuevo_estado': nuevo_estado
-        }
+            
     except Exception as e:
+        print(f"Error en cambiar_estado_paciente: {str(e)}")
         return {'success': False, 'message': f'Error al cambiar estado: {str(e)}'}
 
 def asignar_cuidador_a_paciente(paciente_id, datos_cuidador):
@@ -282,13 +371,16 @@ def asignar_cuidador_a_paciente(paciente_id, datos_cuidador):
     Asigna un cuidador a un paciente
     """
     try:
+        from app import mysql
+        
         # Verificar que el paciente existe
-        paciente = Paciente.query.get(paciente_id)
+        paciente = Paciente.obtener_por_id(mysql, paciente_id)
         if not paciente:
             return {'success': False, 'message': 'Paciente no encontrado'}
         
         # Crear el cuidador
-        cuidador = Cuidador.crear_cuidador(
+        cuidador_id = Cuidador.crear_cuidador(
+            mysql=mysql,
             paciente_id=paciente_id,
             nombre_completo=datos_cuidador['nombre_completo'],
             dni=datos_cuidador['dni'],
@@ -298,19 +390,20 @@ def asignar_cuidador_a_paciente(paciente_id, datos_cuidador):
         
         return {
             'success': True,
-            'message': f'Cuidador {cuidador.nombre_completo} asignado exitosamente',
-            'cuidador_id': cuidador.id
+            'message': f'Cuidador {datos_cuidador["nombre_completo"]} asignado exitosamente',
+            'cuidador_id': cuidador_id
         }
     except Exception as e:
+        print(f"Error en asignar_cuidador_a_paciente: {str(e)}")
         return {'success': False, 'message': f'Error al asignar cuidador: {str(e)}'}
-    
-
 
 def actualizar_paciente_completo(data):
     """
     Actualiza datos completos de un paciente y sus cuidadores
     """
     try:
+        from app import mysql
+        
         # Validar que se recibieron datos
         if not data:
             return {'success': False, 'message': 'No se recibieron datos'}
@@ -323,143 +416,122 @@ def actualizar_paciente_completo(data):
         
         # Obtener el paciente
         paciente_id = data.get('paciente_id')
-        paciente = Paciente.query.get(paciente_id)
+        paciente = Paciente.obtener_por_id(mysql, paciente_id)
         
         if not paciente:
             return {'success': False, 'message': 'Paciente no encontrado'}
-        
-        # Validar que el DNI no esté en uso por otro paciente
-        dni_existente = Paciente.query.filter(
-            Paciente.dni == data.get('dni'),
-            Paciente.id != paciente_id
-        ).first()
-        
-        if dni_existente:
-            return {'success': False, 'message': 'El DNI ya está registrado por otro paciente'}
         
         # Validar datos antes de actualizar
         errores_validacion = validar_datos_paciente_completo(data)
         if errores_validacion:
             return {'success': False, 'message': '; '.join(errores_validacion)}
         
+        cursor = mysql.connection.cursor()
+        
         # Actualizar datos básicos del paciente
-        paciente.nombres = data.get('nombres').strip()
-        paciente.apellidos = data.get('apellidos').strip()
-        paciente.dni = data.get('dni').strip()
-        paciente.fecha_nacimiento = datetime.strptime(data.get('fecha_nacimiento'), '%Y-%m-%d').date()
-        paciente.email = data.get('email', '').strip() if data.get('email') else None
-        paciente.telefono = data.get('telefono', '').strip() if data.get('telefono') else None
-        paciente.direccion = data.get('direccion', '').strip() if data.get('direccion') else None
+        query_paciente = """
+            UPDATE pacientes 
+            SET nombres = %s, apellidos = %s, dni = %s, fecha_nacimiento = %s,
+                email = %s, telefono = %s, direccion = %s
+            WHERE id = %s
+        """
         
-        # Actualizar enfermedades
-        enfermedades = data.get('enfermedades', [])
-        if enfermedades:
-            paciente.enfermedades = ','.join(enfermedades)
-        else:
-            paciente.enfermedades = None
+        fecha_nacimiento = datetime.strptime(data.get('fecha_nacimiento'), '%Y-%m-%d').date()
         
-        # ===============================
-        # GESTIÓN DE CUIDADORES
-        # ===============================
+        cursor.execute(query_paciente, (
+            data.get('nombres').strip(),
+            data.get('apellidos').strip(),
+            data.get('dni').strip(),
+            fecha_nacimiento,
+            data.get('email', '').strip() if data.get('email') else None,
+            data.get('telefono', '').strip() if data.get('telefono') else None,
+            data.get('direccion', '').strip() if data.get('direccion') else None,
+            paciente_id
+        ))
         
-        # 1. Eliminar cuidadores marcados para eliminación
-        cuidadores_eliminados = data.get('cuidadores_eliminados', [])
-        for cuidador_id in cuidadores_eliminados:
-            if cuidador_id.isdigit():  # Solo IDs numéricos (cuidadores existentes)
-                cuidador = Cuidador.query.get(int(cuidador_id))
-                if cuidador and cuidador.paciente_id == paciente.id:
-                    db.session.delete(cuidador)
-                    print(f"Cuidador {cuidador_id} eliminado")
-        
-        # 2. Actualizar cuidadores existentes
+        # Gestión de cuidadores existentes
         cuidadores_actualizados = data.get('cuidadores', [])
         for cuidador_data in cuidadores_actualizados:
             cuidador_id = cuidador_data.get('id')
-            if cuidador_id and cuidador_id.isdigit():
-                cuidador = Cuidador.query.get(int(cuidador_id))
-                if cuidador and cuidador.paciente_id == paciente.id:
-                    # Validar DNI único entre cuidadores
-                    dni_cuidador_existente = Cuidador.query.filter(
-                        Cuidador.dni == cuidador_data.get('dni'),
-                        Cuidador.id != cuidador.id,
-                        Cuidador.paciente_id == paciente.id
-                    ).first()
-                    
-                    if dni_cuidador_existente:
-                        return {
-                            'success': False, 
-                            'message': f'El DNI {cuidador_data.get("dni")} ya existe en otro cuidador'
-                        }
-                    
-                    # Validar datos del cuidador
-                    errores_cuidador = validar_datos_cuidador(cuidador_data)
-                    if errores_cuidador:
-                        return {'success': False, 'message': '; '.join(errores_cuidador)}
-                    
-                    # Actualizar datos
-                    cuidador.nombre_completo = cuidador_data.get('nombre', '').strip()
-                    cuidador.dni = cuidador_data.get('dni', '').strip()
-                    cuidador.telefono = cuidador_data.get('telefono', '').strip()
-                    cuidador.relacion_paciente = cuidador_data.get('relacion', '')
-                    cuidador.estado = cuidador_data.get('estado', 'activo')
-                    print(f"Cuidador {cuidador_id} actualizado")
+            if cuidador_id and str(cuidador_id).isdigit():
+                # Validar datos del cuidador
+                errores_cuidador = validar_datos_cuidador(cuidador_data)
+                if errores_cuidador:
+                    mysql.connection.rollback()
+                    return {'success': False, 'message': '; '.join(errores_cuidador)}
+                
+                # Actualizar cuidador existente
+                query_cuidador = """
+                    UPDATE cuidadores 
+                    SET nombre_completo = %s, dni = %s, telefono = %s, relacion_paciente = %s
+                    WHERE id = %s AND paciente_id = %s
+                """
+                cursor.execute(query_cuidador, (
+                    cuidador_data.get('nombre', '').strip(),
+                    cuidador_data.get('dni', '').strip(),
+                    cuidador_data.get('telefono', '').strip(),
+                    cuidador_data.get('relacion', ''),
+                    cuidador_id,
+                    paciente_id
+                ))
         
-        # 3. Crear nuevos cuidadores
+        # Crear nuevos cuidadores
         cuidadores_nuevos = data.get('cuidadores_nuevos', [])
         for cuidador_data in cuidadores_nuevos:
-            # Validar DNI único
-            dni_cuidador_existente = Cuidador.query.filter(
-                Cuidador.dni == cuidador_data.get('dni'),
-                Cuidador.paciente_id == paciente.id
-            ).first()
-            
-            if dni_cuidador_existente:
-                return {
-                    'success': False, 
-                    'message': f'El DNI {cuidador_data.get("dni")} ya existe en otro cuidador'
-                }
-            
             # Validar datos del cuidador
             errores_cuidador = validar_datos_cuidador(cuidador_data)
             if errores_cuidador:
+                mysql.connection.rollback()
                 return {'success': False, 'message': '; '.join(errores_cuidador)}
             
             # Crear nuevo cuidador
-            nuevo_cuidador = Cuidador(
-                paciente_id=paciente.id,
-                nombre_completo=cuidador_data.get('nombre', '').strip(),
-                dni=cuidador_data.get('dni', '').strip(),
-                telefono=cuidador_data.get('telefono', '').strip(),
-                relacion_paciente=cuidador_data.get('relacion', ''),
-                estado=cuidador_data.get('estado', 'activo')
-            )
-            
-            db.session.add(nuevo_cuidador)
-            print(f"Nuevo cuidador creado: {nuevo_cuidador.nombre_completo}")
+            query_nuevo_cuidador = """
+                INSERT INTO cuidadores (paciente_id, nombre_completo, dni, telefono, relacion_paciente, estado)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(query_nuevo_cuidador, (
+                paciente_id,
+                cuidador_data.get('nombre', '').strip(),
+                cuidador_data.get('dni', '').strip(),
+                cuidador_data.get('telefono', '').strip(),
+                cuidador_data.get('relacion', ''),
+                'ACTIVO'
+            ))
         
-        # Guardar todos los cambios
-        db.session.commit()
+        # Eliminar cuidadores marcados para eliminación
+        cuidadores_eliminados = data.get('cuidadores_eliminados', [])
+        for cuidador_id in cuidadores_eliminados:
+            if str(cuidador_id).isdigit():
+                cursor.execute("""
+                    DELETE FROM cuidadores 
+                    WHERE id = %s AND paciente_id = %s
+                """, (cuidador_id, paciente_id))
+        
+        mysql.connection.commit()
+        cursor.close()
+        
+        # Obtener datos actualizados del paciente
+        paciente_actualizado = Paciente.obtener_por_id(mysql, paciente_id)
         
         return {
             'success': True, 
             'message': 'Paciente y cuidadores actualizados exitosamente',
             'paciente': {
-                'id': paciente.id,
-                'nombre_completo': paciente.nombre_completo,
-                'dni': paciente.dni,
-                'email': paciente.email,
-                'estado': paciente.estado
+                'id': paciente_actualizado['id'],
+                'nombre_completo': f"{paciente_actualizado['nombres']} {paciente_actualizado['apellidos']}",
+                'dni': paciente_actualizado['dni'],
+                'email': paciente_actualizado.get('email', ''),
+                'estado': paciente_actualizado['estado']
             }
         }
         
     except ValueError as e:
-        db.session.rollback()
+        mysql.connection.rollback()
         return {'success': False, 'message': 'Formato de fecha inválido'}
     except Exception as e:
-        db.session.rollback()
-        print(f"Error al actualizar paciente: {e}")
+        mysql.connection.rollback()
+        print(f"Error al actualizar paciente completo: {e}")
         return {'success': False, 'message': 'Error interno del servidor'}
-
 
 def validar_datos_paciente_completo(data):
     """
@@ -499,7 +571,6 @@ def validar_datos_paciente_completo(data):
     
     return errores
 
-
 def validar_datos_cuidador(data):
     """
     Valida los datos del cuidador antes de guardar
@@ -523,7 +594,7 @@ def validar_datos_cuidador(data):
     
     # Validar relación
     relacion = data.get('relacion', '')
-    relaciones_validas = ['hijo', 'padre', 'hermano', 'conyuge', 'familiar', 'amistad', 'profesional', 'otro']
+    relaciones_validas = ['hijo', 'padre', 'hermano', 'conyugue', 'familiar', 'amigo', 'profesional', 'otro']
     if relacion not in relaciones_validas:
         errores.append('La relación del cuidador no es válida')
     

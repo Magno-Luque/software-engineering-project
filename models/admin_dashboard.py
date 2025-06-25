@@ -1,160 +1,367 @@
 # models/admin_dashboard.py
 
-from . import db
-from sqlalchemy import asc, desc
 from datetime import date
-from models.cita import Cita
 
-
-# ------------------------------------------------------------------------------
-# MODELO: ResumenDashboard
-# Propósito: Almacena métricas precalculadas para el panel de administración.
-# Notas:
-#   - Diseñado como tabla singleton (solo 1 registro) para acceso rápido
-#   - Los valores se actualizan mediante procesos batch, no en tiempo real
-# ------------------------------------------------------------------------------
-class ResumenDashboard(db.Model):
-    __tablename__ = 'resumen_dashboard'
+class ResumenDashboard:
+    """Modelo para la tabla resumen_dashboard usando Flask-MySQLdb"""
     
-    id = db.Column(db.Integer, primary_key=True)
-    total_pacientes = db.Column(db.Integer, default=0)
-    total_profesionales = db.Column(db.Integer, default=0)
-    citas_hoy = db.Column(db.Integer, default=0)
-    alertas_criticas_activas = db.Column(db.Integer, default=0)
-    fecha_actualizacion = db.Column(db.TIMESTAMP, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    def __init__(self, mysql):
+        self.mysql = mysql
     
-    @staticmethod
-    def obtener_resumen():
+    @classmethod
+    def obtener_resumen(cls, mysql):
         """
         Retorna el resumen de métricas del dashboard.
         
         Returns:
-            dict/None: Diccionario con métricas o None si no existe registro.
+            dict: Diccionario con métricas actualizadas
             
         Notas:
-            - Solo debe existir un registro en esta tabla
-            - Los valores se actualizan periódicamente, no en cada operación
+            - Calcula las métricas en tiempo real para mayor precisión
+            - Mantiene compatibilidad con el formato esperado por el frontend
         """
-        resumen = ResumenDashboard.query.first()
-        if resumen:
+        try:
+            cursor = mysql.connection.cursor()
+            
+            # Obtener total de pacientes activos
+            cursor.execute("SELECT COUNT(*) as total FROM pacientes WHERE estado = 'ACTIVO'")
+            total_pacientes = cursor.fetchone()['total']
+            
+            # Obtener total de profesionales activos
+            cursor.execute("SELECT COUNT(*) as total FROM profesionales WHERE estado = 'ACTIVO'")
+            total_profesionales = cursor.fetchone()['total']
+            
+            # Obtener citas de hoy
+            hoy = date.today()
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE fecha_cita = %s", (hoy,))
+            citas_hoy = cursor.fetchone()['total']
+            
+            # Obtener alertas críticas activas
+            cursor.execute("SELECT COUNT(*) as total FROM alertas_criticas WHERE estado = 'PENDIENTE'")
+            alertas_criticas = cursor.fetchone()['total']
+            
+            cursor.close()
+            
             return {
-                'total_pacientes': resumen.total_pacientes,
-                'total_profesionales': resumen.total_profesionales,
-                'total_citas_hoy': resumen.citas_hoy,
-                'total_alertas_criticas': resumen.alertas_criticas_activas
+                'total_pacientes': total_pacientes,
+                'total_profesionales': total_profesionales,
+                'total_citas_hoy': citas_hoy,
+                'total_alertas_criticas': alertas_criticas
             }
-        return {
-            'total_pacientes': 0,
-            'total_profesionales': 0,
-            'total_citas_hoy': 0,
-            'total_alertas_criticas': 0
-        }
-
-# # ------------------------------------------------------------------------------
-# # MODELO: Cita - ACTUALIZADO PARA NUEVA ESTRUCTURA
-# # Propósito: Gestiona las citas médicas entre pacientes y profesionales.
-# # Comportamiento:
-# #   - Estado por defecto: 'AGENDADA'
-# #   - Las relaciones usan backref para acceso bidireccional
-# # ------------------------------------------------------------------------------
-# class Cita(db.Model):
-#     __tablename__ = 'citas'
-    
-#     id = db.Column(db.Integer, primary_key=True)
-#     paciente_id = db.Column(db.Integer, db.ForeignKey('pacientes.id'), nullable=False)
-#     medico_id = db.Column(db.Integer, db.ForeignKey('profesionales.id'), nullable=False)
-#     horario_id = db.Column(db.Integer, db.ForeignKey('horarios_disponibles.id'), nullable=False)  # OBLIGATORIO
-#     enfermedad_id = db.Column(db.Integer, db.ForeignKey('enfermedades.id'), nullable=False)  # OBLIGATORIO
-    
-#     # Información de la cita (copiada del horario)
-#     fecha_cita = db.Column(db.Date, nullable=False)
-#     hora_inicio = db.Column(db.Time, nullable=False)  # Cambió de hora_cita
-#     hora_fin = db.Column(db.Time, nullable=False)     # NUEVO
-#     duracion_minutos = db.Column(db.Integer, nullable=False, default=60)  # NUEVO
-#     tipo = db.Column(db.Enum('PRESENCIAL', 'VIRTUAL'), nullable=False)
-#     consultorio = db.Column(db.String(50))  # NUEVO: para citas presenciales
-    
-#     # Información del médico (para evitar JOINs repetitivos)
-#     especialidad = db.Column(db.String(50), nullable=False)
-    
-#     # Estado simplificado
-#     estado = db.Column(db.Enum('AGENDADA', 'ATENDIDA', 'NO_ATENDIDA', 'CANCELADA'), default='AGENDADA')
-    
-#     # Información adicional
-#     motivo_consulta = db.Column(db.Text)  # NUEVO: motivo de la consulta
-#     observaciones = db.Column(db.Text)    # Observaciones generales
-#     enlace_virtual = db.Column(db.String(255))  # Para citas virtuales
-    
-#     # Auditoría
-#     fecha_creacion = db.Column(db.TIMESTAMP, default=db.func.current_timestamp())
-#     fecha_actualizacion = db.Column(db.TIMESTAMP, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
-    
-#     # Relaciones - usando lazy loading para evitar problemas circulares
-#     paciente = db.relationship('Paciente', backref='citas', lazy='select')
-#     medico = db.relationship('Profesional', backref='citas_asignadas', lazy='select')
-#     horario = db.relationship('HorarioDisponible', backref='citas_programadas', lazy='select')
-#     enfermedad = db.relationship('Enfermedad', backref='citas_relacionadas', lazy='select')
-    
-#     @staticmethod
-#     def obtener_citas_hoy():
-#         """
-#         Obtiene citas agendadas para el día actual.
-        
-#         Returns:
-#             list: Citas ordenadas por hora de inicio ascendente
             
-#         Notas:
-#             - Filtra por fecha actual del sistema (date.today())
-#             - Ordena de la cita más temprana a la más tardía
-#         """
-#         hoy = date.today()
-#         return Cita.query.filter(Cita.fecha_cita == hoy).order_by(asc(Cita.hora_inicio)).all()
+        except Exception as e:
+            print(f"Error al obtener resumen del dashboard: {str(e)}")
+            return {
+                'total_pacientes': 0,
+                'total_profesionales': 0,
+                'total_citas_hoy': 0,
+                'total_alertas_criticas': 0
+            }
     
-#     @staticmethod
-#     def obtener_citas_por_horario(horario_id):
-#         """
-#         Obtiene todas las citas asociadas a un horario específico.
+    @classmethod
+    def actualizar_resumen_tabla(cls, mysql):
+        """
+        Actualiza el registro en la tabla resumen_dashboard.
         
-#         Args:
-#             horario_id (int): ID del horario
+        Returns:
+            bool: True si se actualizó correctamente, False en caso contrario
             
-#         Returns:
-#             list: Lista de citas del horario
-#         """
-#         return Cita.query.filter_by(horario_id=horario_id).all()
+        Notas:
+            - Mantiene la tabla resumen_dashboard para compatibilidad
+            - Actualiza o inserta según sea necesario
+        """
+        try:
+            cursor = mysql.connection.cursor()
+            
+            # Calcular métricas actuales
+            resumen = cls.obtener_resumen(mysql)
+            
+            # Verificar si existe un registro
+            cursor.execute("SELECT COUNT(*) as total FROM resumen_dashboard")
+            existe = cursor.fetchone()['total'] > 0
+            
+            if existe:
+                # Actualizar registro existente
+                query = """
+                    UPDATE resumen_dashboard 
+                    SET total_pacientes = %s, 
+                        total_profesionales = %s, 
+                        citas_hoy = %s, 
+                        alertas_criticas_activas = %s,
+                        fecha_actualizacion = CURRENT_TIMESTAMP
+                    WHERE id = (SELECT MIN(id) FROM resumen_dashboard)
+                """
+            else:
+                # Insertar nuevo registro
+                query = """
+                    INSERT INTO resumen_dashboard 
+                    (total_pacientes, total_profesionales, citas_hoy, alertas_criticas_activas)
+                    VALUES (%s, %s, %s, %s)
+                """
+            
+            cursor.execute(query, (
+                resumen['total_pacientes'],
+                resumen['total_profesionales'],
+                resumen['total_citas_hoy'],
+                resumen['total_alertas_criticas']
+            ))
+            
+            mysql.connection.commit()
+            cursor.close()
+            
+            print("Resumen del dashboard actualizado exitosamente")
+            return True
+            
+        except Exception as e:
+            mysql.connection.rollback()
+            print(f"Error al actualizar resumen del dashboard: {str(e)}")
+            return False
     
-#     @staticmethod
-#     def obtener_citas_activas_por_horario(horario_id):
-#         """
-#         Obtiene solo las citas agendadas (no canceladas) de un horario.
+    @classmethod
+    def obtener_resumen_desde_tabla(cls, mysql):
+        """
+        Obtiene el resumen desde la tabla resumen_dashboard (datos precalculados).
         
-#         Args:
-#             horario_id (int): ID del horario
+        Returns:
+            dict: Diccionario con métricas desde la tabla
             
-#         Returns:
-#             list: Lista de citas activas del horario
-#         """
-#         return Cita.query.filter(
-#             Cita.horario_id == horario_id,
-#             Cita.estado == 'AGENDADA'
-#         ).all()
+        Notas:
+            - Más rápido que calcular en tiempo real
+            - Requiere que la tabla esté actualizada
+        """
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT total_pacientes, total_profesionales, citas_hoy, 
+                       alertas_criticas_activas, fecha_actualizacion
+                FROM resumen_dashboard 
+                ORDER BY id DESC 
+                LIMIT 1
+            """
+            
+            cursor.execute(query)
+            resumen = cursor.fetchone()
+            cursor.close()
+            
+            if resumen:
+                return {
+                    'total_pacientes': resumen['total_pacientes'],
+                    'total_profesionales': resumen['total_profesionales'],
+                    'total_citas_hoy': resumen['citas_hoy'],
+                    'total_alertas_criticas': resumen['alertas_criticas_activas'],
+                    'fecha_actualizacion': resumen['fecha_actualizacion']
+                }
+            else:
+                # Si no hay datos, retornar métricas en tiempo real
+                return cls.obtener_resumen(mysql)
+                
+        except Exception as e:
+            print(f"Error al obtener resumen desde tabla: {str(e)}")
+            return cls.obtener_resumen(mysql)
     
-#     @property
-#     def duracion_formateada(self):
-#         """
-#         Retorna la duración de la cita en formato legible.
-#         """
-#         if self.duracion_minutos >= 60:
-#             horas = self.duracion_minutos // 60
-#             minutos = self.duracion_minutos % 60
-#             if minutos > 0:
-#                 return f"{horas}h {minutos}min"
-#             return f"{horas}h"
-#         return f"{self.duracion_minutos}min"
+    @classmethod
+    def obtener_estadisticas_detalladas(cls, mysql):
+        """
+        Obtiene estadísticas más detalladas para el dashboard.
+        
+        Returns:
+            dict: Diccionario con estadísticas detalladas
+        """
+        try:
+            cursor = mysql.connection.cursor()
+            
+            # Estadísticas de citas por estado
+            cursor.execute("""
+                SELECT estado, COUNT(*) as cantidad
+                FROM citas 
+                WHERE fecha_cita >= CURDATE() - INTERVAL 30 DAY
+                GROUP BY estado
+            """)
+            citas_por_estado = cursor.fetchall()
+            
+            # Estadísticas de profesionales por especialidad
+            cursor.execute("""
+                SELECT especialidad, COUNT(*) as cantidad
+                FROM profesionales 
+                WHERE estado = 'ACTIVO'
+                GROUP BY especialidad
+            """)
+            profesionales_por_especialidad = cursor.fetchall()
+            
+            # Citas por día (últimos 7 días)
+            cursor.execute("""
+                SELECT DATE(fecha_cita) as fecha, COUNT(*) as cantidad
+                FROM citas 
+                WHERE fecha_cita >= CURDATE() - INTERVAL 7 DAY
+                GROUP BY DATE(fecha_cita)
+                ORDER BY fecha
+            """)
+            citas_por_dia = cursor.fetchall()
+            
+            # Alertas críticas por tipo
+            cursor.execute("""
+                SELECT tipo_alerta, COUNT(*) as cantidad
+                FROM alertas_criticas 
+                WHERE estado = 'PENDIENTE'
+                GROUP BY tipo_alerta
+            """)
+            alertas_por_tipo = cursor.fetchall()
+            
+            cursor.close()
+            
+            return {
+                'citas_por_estado': citas_por_estado,
+                'profesionales_por_especialidad': profesionales_por_especialidad,
+                'citas_por_dia': citas_por_dia,
+                'alertas_por_tipo': alertas_por_tipo
+            }
+            
+        except Exception as e:
+            print(f"Error al obtener estadísticas detalladas: {str(e)}")
+            return {
+                'citas_por_estado': [],
+                'profesionales_por_especialidad': [],
+                'citas_por_dia': [],
+                'alertas_por_tipo': []
+            }
     
-#     @property
-#     def horario_completo(self):
-#         """
-#         Retorna el horario completo de la cita en formato legible.
-#         """
-#         return f"{self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')}"
+    @classmethod
+    def obtener_actividad_reciente(cls, mysql, limit=10):
+        """
+        Obtiene la actividad reciente del sistema.
+        
+        Args:
+            limit (int): Número máximo de registros a retornar
+            
+        Returns:
+            list: Lista de actividades recientes
+        """
+        try:
+            cursor = mysql.connection.cursor()
+            
+            # Citas recientes
+            cursor.execute("""
+                SELECT 'cita' as tipo, c.id, c.fecha_creacion,
+                       CONCAT(p.nombres, ' ', p.apellidos) as paciente,
+                       CONCAT(pr.nombres, ' ', pr.apellidos) as profesional,
+                       c.estado
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                JOIN profesionales pr ON c.medico_id = pr.id
+                ORDER BY c.fecha_creacion DESC
+                LIMIT %s
+            """, (limit // 2,))
+            
+            citas_recientes = cursor.fetchall()
+            
+            # Pacientes recientes
+            cursor.execute("""
+                SELECT 'paciente' as tipo, id, fecha_registro as fecha_creacion,
+                       CONCAT(nombres, ' ', apellidos) as nombre,
+                       estado
+                FROM pacientes
+                ORDER BY fecha_registro DESC
+                LIMIT %s
+            """, (limit // 2,))
+            
+            pacientes_recientes = cursor.fetchall()
+            
+            cursor.close()
+            
+            # Combinar y ordenar por fecha
+            actividad = []
+            
+            for cita in citas_recientes:
+                actividad.append({
+                    'tipo': 'cita',
+                    'id': cita['id'],
+                    'fecha': cita['fecha_creacion'],
+                    'descripcion': f"Cita agendada para {cita['paciente']} con {cita['profesional']}",
+                    'estado': cita['estado']
+                })
+            
+            for paciente in pacientes_recientes:
+                actividad.append({
+                    'tipo': 'paciente',
+                    'id': paciente['id'],
+                    'fecha': paciente['fecha_creacion'],
+                    'descripcion': f"Nuevo paciente registrado: {paciente['nombre']}",
+                    'estado': paciente['estado']
+                })
+            
+            # Ordenar por fecha descendente
+            actividad.sort(key=lambda x: x['fecha'], reverse=True)
+            
+            return actividad[:limit]
+            
+        except Exception as e:
+            print(f"Error al obtener actividad reciente: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_metricas_rendimiento(cls, mysql):
+        """
+        Obtiene métricas de rendimiento del sistema.
+        
+        Returns:
+            dict: Diccionario con métricas de rendimiento
+        """
+        try:
+            cursor = mysql.connection.cursor()
+            
+            # Promedio de citas por día
+            cursor.execute("""
+                SELECT AVG(citas_por_dia) as promedio
+                FROM (
+                    SELECT DATE(fecha_cita) as fecha, COUNT(*) as citas_por_dia
+                    FROM citas 
+                    WHERE fecha_cita >= CURDATE() - INTERVAL 30 DAY
+                    GROUP BY DATE(fecha_cita)
+                ) as subconsulta
+            """)
+            promedio_citas = cursor.fetchone()
+            
+            # Tasa de citas atendidas
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_citas,
+                    SUM(CASE WHEN estado = 'ATENDIDA' THEN 1 ELSE 0 END) as citas_atendidas
+                FROM citas 
+                WHERE fecha_cita >= CURDATE() - INTERVAL 30 DAY
+            """)
+            tasa_atencion = cursor.fetchone()
+            
+            # Tiempo promedio de espera (días entre registro y primera cita)
+            cursor.execute("""
+                SELECT AVG(DATEDIFF(c.fecha_cita, p.fecha_registro)) as tiempo_espera_promedio
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                WHERE c.fecha_cita >= CURDATE() - INTERVAL 30 DAY
+            """)
+            tiempo_espera = cursor.fetchone()
+            
+            cursor.close()
+            
+            # Calcular porcentaje de atención
+            porcentaje_atencion = 0
+            if tasa_atencion['total_citas'] > 0:
+                porcentaje_atencion = (tasa_atencion['citas_atendidas'] / tasa_atencion['total_citas']) * 100
+            
+            return {
+                'promedio_citas_dia': round(promedio_citas['promedio'] or 0, 2),
+                'porcentaje_atencion': round(porcentaje_atencion, 2),
+                'tiempo_espera_promedio': round(tiempo_espera['tiempo_espera_promedio'] or 0, 1),
+                'total_citas_mes': tasa_atencion['total_citas'],
+                'citas_atendidas_mes': tasa_atencion['citas_atendidas']
+            }
+            
+        except Exception as e:
+            print(f"Error al obtener métricas de rendimiento: {str(e)}")
+            return {
+                'promedio_citas_dia': 0,
+                'porcentaje_atencion': 0,
+                'tiempo_espera_promedio': 0,
+                'total_citas_mes': 0,
+                'citas_atendidas_mes': 0
+            }

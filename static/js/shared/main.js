@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuToggle = document.querySelector('.menu-toggle-icon');
     const sidebar = document.querySelector('.sidebar');
     if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
+        menuToggle.addEventListener('click', () => { 
             sidebar.classList.toggle('collapsed');
             // Aquí se podría ajustar el layout del main-content si el sidebar se colapsa
         });
