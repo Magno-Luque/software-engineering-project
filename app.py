@@ -1,7 +1,7 @@
 from flask import Flask, render_template, url_for, request, redirect, flash, jsonify, session
 from flask_mysqldb import MySQL
 from functools import wraps
-from config.config import Config
+from config.config import Config 
 from datetime import datetime, date
 from controllers.inicio_sesion import AuthController
 
