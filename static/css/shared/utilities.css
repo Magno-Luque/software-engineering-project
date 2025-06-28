@@ -1,4 +1,4 @@
-/* static/css/shared/utilidades.css */
+/* static/css/shared/utilities.css */
 .card {
     background-color: var(--card-bg);
     border-radius: 8px;
@@ -35,7 +35,6 @@
     color: var(--text-gray);
 }
 
-/*----*/
 .status {
     padding: 4px 8px;
     border-radius: 4px;
@@ -44,11 +43,6 @@
     text-transform: uppercase;
     color: var(--text-light);
 }
-/*----*/
-
-/*admin-dashboard*/
-/*----*/
-
 
 .status.active {
     background-color: var(--active-status);
@@ -57,7 +51,6 @@
 .status.inactive {
     background-color: var(--inactive-status);
 }
-
 
 .status.pending {
     background-color: var(--pending-status);
@@ -79,11 +72,6 @@
     background-color: var(--high-criticality);
 }
 
-
-/*----*/
-
-
-
 .btn { 
     padding: 10px 20px;
     border-radius: 5px;
@@ -93,12 +81,12 @@
 }
 
 .btn-primary {
-    background-color: var(--secondary-blue);
+    background-color: var(--primary-blue);
     color: var(--text-light);
     border: none;
 }
 
-.btn-primary:hover {  
+.btn-primary:hover {
     background-color: #2554d1; /* Un tono más oscuro */
 }
 
