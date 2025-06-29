@@ -7,10 +7,6 @@ biometrico_bp = Blueprint('triaje', __name__)
 
 @biometrico_bp.route('/paciente/datos-biometricos', methods=['GET', 'POST'])
 def datos_biometricos():
-    if 'user_id' not in session or session.get('user_rol') != 'paciente':
-        flash('Debes iniciar sesión como paciente para acceder a esta página', 'danger')
-        return redirect(url_for('triaje.datos_biometricos'))
-    
     if request.method == 'POST':
         try:
             glucosa = request.form.get('glucosa')
@@ -39,8 +35,6 @@ def datos_biometricos():
             
             if resultado:
                 return redirect(url_for('triaje.datos_biometricos'))
-            else:
-                flash('Error al guardar los datos. Por favor intenta nuevamente.', 'danger')
                 
         except ValueError as e:
             flash('Por favor ingresa valores numéricos válidos', 'warning')

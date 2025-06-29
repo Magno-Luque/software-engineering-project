@@ -22,11 +22,11 @@ class AuthController:
             if usuario:
                 # Configurar sesión
                 session['user_id'] = usuario.id
+                print()
                 session['user_role'] = usuario.rol
                 session['user_name'] = usuario.usuario
                 session.permanent = True
                 
-                flash(f'Bienvenido, {usuario.usuario}!', 'success')
                 return redirect(url_for(f"{usuario.rol}_dashboard"))
             else:
                 flash('Usuario o contraseña incorrectos', 'danger')

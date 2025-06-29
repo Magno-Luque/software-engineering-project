@@ -7,10 +7,6 @@ infoadicional_bp = Blueprint('infoadicional', __name__)
 
 @infoadicional_bp.route('/paciente/actividad-fisica', methods=['GET', 'POST'])
 def informacion_adicional():
-    if 'user_id' not in session or session.get('user_rol') != 'paciente':
-        flash('Debes iniciar sesión como paciente para acceder a esta página', 'danger')
-        return redirect(url_for('infoadicional.informacion_adicional'))
-    
     if request.method == 'POST':
         try:
             desayuno_comida = request.form.get('desayuno_comida', '').strip()
@@ -47,8 +43,6 @@ def informacion_adicional():
             if resultado:
                 flash('Actividad Fisica y Dieta registrada exitosamente', 'success')
                 return redirect(url_for('paciente_actividad_fisica.paciente_actividad_fisica'))
-            else:
-                flash('Error al guardar los datos. Por favor intenta nuevamente.', 'danger')
                 
         except ValueError as e:
             flash('Por favor ingresa valores numéricos válidos', 'warning')

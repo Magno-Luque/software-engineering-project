@@ -78,7 +78,6 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or 'user_role' not in session:
-            flash('Debes iniciar sesión para acceder a esta página.', 'warning')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -89,7 +88,6 @@ def role_required(*allowed_roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_role' not in session:
-                flash('Debes iniciar sesión para acceder a esta página.', 'warning')
                 return redirect(url_for('login'))
             
             if session['user_role'] not in allowed_roles:

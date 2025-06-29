@@ -1,5 +1,3 @@
-# models/medicamentos.py
-
 import pymysql
 from datetime import datetime
 from config.config import connectionBD
@@ -54,7 +52,6 @@ class Medicamentos:
         cursor = conexion_MySQLdb.cursor(dictionary=True)
         
         try:
-            # Cambiado de 'usuarios_id' a 'usuarios_id1' para coincidir con tu estructura
             sql_paciente = "SELECT id FROM pacientes WHERE usuarios_id1 = %s"
             cursor.execute(sql_paciente, (usuario_id,))
             paciente = cursor.fetchone()
@@ -65,7 +62,7 @@ class Medicamentos:
 
             sql_medicamentos = """
             SELECT 
-                idmedicamentos as id,
+                idmedicamentos,
                 medicamento,
                 dosis,
                 frecuencia,
@@ -81,14 +78,7 @@ class Medicamentos:
             ORDER BY fecha DESC
             """
             cursor.execute(sql_medicamentos, (paciente['id'],))
-            medicamentos = cursor.fetchall()
-            
-            # Procesar fechas si es necesario
-            for med in medicamentos:
-                if 'fecha' in med and isinstance(med['fecha'], datetime):
-                    med['fecha'] = med['fecha'].strftime('%d/%m/%Y')
-                    
-            return medicamentos
+            return cursor.fetchall()
             
         except pymysql.Error as e:
             print(f"Error en base de datos: {e}")

@@ -14,17 +14,18 @@ class Usuario:
         self.correo = correo
 
 class Paciente:
-    def __init__(self, id, dni, nombres, apellidos, telefono, edad, fecha_nacimiento, direccion, activo, enfermedad, usuarios_id1):
+    def __init__(self, id, dni, nombres, apellidos, fecha_nacimiento, telefono, email, direccion, enfermedades, fecha_registro, estado, usuarios_id1):
         self.id = id
         self.dni = dni
         self.nombres = nombres
         self.apellidos = apellidos
-        self.telefono = telefono
-        self.edad = edad
         self.fecha_nacimiento = fecha_nacimiento
+        self.telefono = telefono
+        self.email = email
         self.direccion = direccion
-        self.activo = activo
-        self.enfermedad = enfermedad
+        self.enfermedades = enfermedades
+        self.fecha_registro = fecha_registro
+        self.estado = estado
         self.usuarios_id1 = usuarios_id1
 
 class Dato:
@@ -38,22 +39,26 @@ class Dato:
         self.descripcion = descripcion
         self.pacientes_id = pacientes_id
 
+    
     @classmethod
     def insertar_dato(cls, glucosa, sistolica, diastolica, frecuencia_cardiaca, descripcion, usuarios_id):
         conexion_MySQLdb = connectionBD()
         if conexion_MySQLdb is None:
             print("Error: No se pudo conectar a la base de datos.")
-            return None
+            return False
 
         cursor = conexion_MySQLdb.cursor(dictionary=True)
         
         try:
+            # DEBUG: Imprime los valores recibidos
+            print(f"Valores recibidos - glucosa: {glucosa}, sistolica: {sistolica}, diastolica: {diastolica}, usuario_id: {usuarios_id}")
+
             sql_paciente = "SELECT id FROM pacientes WHERE usuarios_id1 = %s"
-            cursor.execute(sql_paciente, (session['user_id'],))
+            cursor.execute(sql_paciente, (usuarios_id,))
             paciente = cursor.fetchone()
             
             if not paciente:
-                print("No existe paciente asociado a este usuario")
+                print("ERROR: No existe paciente asociado a este usuario")
                 return False
 
             sql_insert = """
@@ -70,12 +75,18 @@ class Dato:
             ))
             
             conexion_MySQLdb.commit()
+            print("DEBUG: Datos insertados correctamente")
             return True
             
         except pymysql.Error as e:
-            print(f"Error en base de datos: {e}")
+            print(f"ERROR DB: {e}")
+            conexion_MySQLdb.rollback()
+            return False
+        except Exception as e:
+            print(f"ERROR Inesperado: {e}")
             conexion_MySQLdb.rollback()
             return False
         finally:
             cursor.close()
             conexion_MySQLdb.close()
+            print("DEBUG: Conexión cerrada")

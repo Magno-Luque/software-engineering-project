@@ -14,17 +14,18 @@ class Usuario:
         self.correo = correo
 
 class Paciente:
-    def __init__(self, id, dni, nombres, apellidos, telefono, edad, fecha_nacimiento, direccion, activo, enfermedad, usuarios_id1):
+    def __init__(self, id, dni, nombres, apellidos, fecha_nacimiento, telefono, email, direccion, enfermedades, fecha_registro, estado, usuarios_id1):
         self.id = id
         self.dni = dni
         self.nombres = nombres
         self.apellidos = apellidos
-        self.telefono = telefono
-        self.edad = edad
         self.fecha_nacimiento = fecha_nacimiento
+        self.telefono = telefono
+        self.email = email
         self.direccion = direccion
-        self.activo = activo
-        self.enfermedad = enfermedad
+        self.enfermedades = enfermedades
+        self.fecha_registro = fecha_registro
+        self.estado = estado
         self.usuarios_id1 = usuarios_id1
 
 class Alerta:
@@ -61,21 +62,19 @@ class Alerta:
                 return None
 
             sql_alerta = """
-                SELECT 
-                    id,
-                    paciente_id,
-                    tipo_alerta,
-                    valor_registrado,
-                    criticidad,
-                    estado,
-                    fecha_alerta,
-                    observaciones,
-                    enfermedad_relacionada_id,
-                    medico_asignado_id,
-                    fecha_resolucion
-                FROM alertas_criticas
-                WHERE paciente_id = %s
-                ORDER BY fecha_alerta DESC
+            SELECT 
+                id,
+                glucosa,
+                sistolica,
+                diastolica,
+                frecuencia_cardiaca,
+                fecha,
+                estado,
+                nota,
+                informacion
+            FROM alertascriticas
+            WHERE pacientes_id = %s
+            ORDER BY fecha DESC
             """
             cursor.execute(sql_alerta, (paciente['id'],))
             return cursor.fetchall()

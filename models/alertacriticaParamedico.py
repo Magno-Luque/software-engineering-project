@@ -14,17 +14,18 @@ class Usuario:
         self.correo = correo
 
 class Paciente:
-    def __init__(self, id, dni, nombres, apellidos, telefono, edad, fecha_nacimiento, direccion, activo, enfermedad, usuarios_id1):
+    def __init__(self, id, dni, nombres, apellidos, fecha_nacimiento, telefono, email, direccion, enfermedades, fecha_registro, estado, usuarios_id1):
         self.id = id
         self.dni = dni
         self.nombres = nombres
         self.apellidos = apellidos
-        self.telefono = telefono
-        self.edad = edad
         self.fecha_nacimiento = fecha_nacimiento
+        self.telefono = telefono
+        self.email = email
         self.direccion = direccion
-        self.activo = activo
-        self.enfermedad = enfermedad
+        self.enfermedades = enfermedades
+        self.fecha_registro = fecha_registro
+        self.estado = estado
         self.usuarios_id1 = usuarios_id1
 
 class Alerta:

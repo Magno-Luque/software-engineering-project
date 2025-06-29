@@ -30,7 +30,6 @@ class AuthController:
                 session['user_name'] = usuario_data['usuario']
                 session.permanent = True
                 
-                flash(f'Bienvenido, {usuario_data["usuario"]}!', 'success')
                 return redirect(url_for(f"{usuario_data['rol']}_dashboard"))
             else:
                 flash('Usuario o contraseña incorrectos', 'danger')

@@ -6,15 +6,10 @@ medicamentos_bp = Blueprint('medicamentos', __name__)
 
 @medicamentos_bp.route('/paciente/medicamentos')
 def listar_medicamentos():
-    if 'user_id' not in session:
-        flash('Debes iniciar sesión primero', 'error')
-        return redirect(url_for('auth.login'))
-
     # Obtener medicamentos usando el Modelo
     medicamentos = Medicamentos.obtener_medicamentos_por_usuario(session['user_id'])
     
     if medicamentos is None:
-        flash('No se encontraron medicamentos', 'info')
         return render_template('paciente/medicamentos.html', medicamentos=[])
     
     return render_template('paciente/medicamentos.html', medicamentos=medicamentos)

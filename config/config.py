@@ -24,6 +24,7 @@ def connectionBD():
             database=Config.MYSQL_DB,
             user=Config.MYSQL_USER,
             password=Config.MYSQL_PASSWORD,
+            charset='utf8mb4',
             port=Config.MYSQL_PORT
         )
         if conexion.is_connected():
