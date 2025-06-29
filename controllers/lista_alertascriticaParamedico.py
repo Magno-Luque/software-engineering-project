@@ -6,11 +6,6 @@ paramedico_bp = Blueprint('paramedico', __name__)
 
 @paramedico_bp.route('/paramedico/alertas_criticas', methods=['GET', 'POST'])
 def alertas():
-    if 'user_id' not in session or session.get('user_rol') != 'paramedico':
-        flash('Acceso no autorizado', 'error')
-        return redirect(url_for('login'))
-    
-    
     paramedico_id = 1
     
     if request.method == 'POST':

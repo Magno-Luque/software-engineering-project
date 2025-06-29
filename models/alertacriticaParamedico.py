@@ -68,7 +68,7 @@ class Alerta:
                 a.paramedicos_id,
                 p.dni,
                 CONCAT(p.nombres, ' ', p.apellidos) AS nombre_completo,
-                p.enfermedad
+                p.enfermedades
             FROM alertascriticas a
             JOIN pacientes p ON a.pacientes_id = p.id
             ORDER BY a.fecha DESC
