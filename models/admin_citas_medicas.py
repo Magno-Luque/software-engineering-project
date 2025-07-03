@@ -1,10 +1,6 @@
 # models/admin_citas_medicas.py
 
-from . import db
-from sqlalchemy import and_, or_, desc, asc
 from datetime import date, datetime
-from models.cita import Cita
-from models.actores import Paciente, Profesional
 
 class AdminCitasMedicas:
     """
@@ -12,30 +8,47 @@ class AdminCitasMedicas:
     """
     
     @staticmethod
-    def obtener_todas_citas():
+    def obtener_todas_citas(mysql):
         """
         Obtiene todas las citas con información completa.
         
         Returns:
-            list: Lista de objetos Cita con relaciones cargadas
+            list: Lista de citas con relaciones cargadas
         """
-        return Cita.query.join(
-            Paciente, Cita.paciente_id == Paciente.id
-        ).join(
-            Profesional, Cita.medico_id == Profesional.id
-        ).order_by(
-            desc(Cita.fecha_cita), 
-            desc(Cita.hora_inicio)
-        ).all()
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos, pac.dni as paciente_dni,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                ORDER BY c.fecha_cita DESC, c.hora_inicio DESC
+            """
+            
+            cursor.execute(query)
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener todas las citas: {str(e)}")
+            return []
     
     @staticmethod
-    def obtener_citas_con_filtros(fecha=None, medico_id=None, especialidad=None, 
+    def obtener_citas_con_filtros(mysql, fecha=None, medico_id=None, especialidad=None, 
                                  estado=None, tipo=None, busqueda=None, 
                                  page=1, per_page=10):
         """
         Obtiene citas con filtros aplicados y paginación.
         
         Args:
+            mysql: Instancia de MySQL de Flask-MySQLdb
             fecha (str, optional): Fecha específica en formato YYYY-MM-DD
             medico_id (int, optional): ID del médico
             especialidad (str, optional): Especialidad médica
@@ -49,20 +62,35 @@ class AdminCitasMedicas:
             dict: Diccionario con citas paginadas y metadatos
         """
         try:
-            query = Cita.query.join(
-                Paciente, Cita.paciente_id == Paciente.id
-            ).join(
-                Profesional, Cita.medico_id == Profesional.id
-            )
+            cursor = mysql.connection.cursor()
+            
+            # Construir query base
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos, pac.dni as paciente_dni,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE 1=1
+            """
+            params = []
             
             # Filtro por fecha
             if fecha and fecha != 'todas':
-                fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
-                query = query.filter(Cita.fecha_cita == fecha_obj)
+                try:
+                    fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
+                    query += " AND c.fecha_cita = %s"
+                    params.append(fecha_obj)
+                except ValueError:
+                    pass
             
             # Filtro por médico
             if medico_id and medico_id != 'todos':
-                query = query.filter(Cita.medico_id == medico_id)
+                query += " AND c.medico_id = %s"
+                params.append(medico_id)
             
             # Filtro por especialidad
             if especialidad and especialidad != 'todas':
@@ -75,7 +103,8 @@ class AdminCitasMedicas:
                 }
                 especialidad_db = especialidad_map.get(especialidad)
                 if especialidad_db:
-                    query = query.filter(Profesional.especialidad == especialidad_db)
+                    query += " AND prof.especialidad = %s"
+                    params.append(especialidad_db)
             
             # Filtro por estado
             if estado and estado != 'todos':
@@ -87,84 +116,101 @@ class AdminCitasMedicas:
                 }
                 estado_db = estado_map.get(estado)
                 if estado_db:
-                    query = query.filter(Cita.estado == estado_db)
+                    query += " AND c.estado = %s"
+                    params.append(estado_db)
             
             # Filtro por tipo
             if tipo and tipo != 'todos':
                 tipo_db = tipo.upper()
-                query = query.filter(Cita.tipo == tipo_db)
+                query += " AND c.tipo = %s"
+                params.append(tipo_db)
             
             # Filtro de búsqueda (nombre del paciente)
             if busqueda:
+                query += " AND (pac.nombres LIKE %s OR pac.apellidos LIKE %s OR pac.dni LIKE %s)"
                 busqueda_like = f"%{busqueda}%"
-                query = query.filter(
-                    or_(
-                        Paciente.nombres.ilike(busqueda_like),
-                        Paciente.apellidos.ilike(busqueda_like),
-                        Paciente.dni.like(busqueda_like)
-                    )
-                )
+                params.extend([busqueda_like, busqueda_like, busqueda_like])
             
-            # Ordenar por fecha y hora más recientes primero
-            query = query.order_by(
-                desc(Cita.fecha_cita),
-                desc(Cita.hora_inicio)
+            # Contar total de registros
+            count_query = query.replace(
+                "SELECT c.*, pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos, pac.dni as paciente_dni, prof.nombres as medico_nombres, prof.apellidos as medico_apellidos, e.nombre as enfermedad_nombre",
+                "SELECT COUNT(*)"
             )
+            cursor.execute(count_query, params)
+            total = cursor.fetchone()['COUNT(*)']
             
-            # Aplicar paginación
-            citas_paginadas = query.paginate(
-                page=page, 
-                per_page=per_page, 
-                error_out=False
-            )
+            # Aplicar ordenamiento y paginación
+            query += " ORDER BY c.fecha_cita DESC, c.hora_inicio DESC"
+            offset = (page - 1) * per_page
+            query += " LIMIT %s OFFSET %s"
+            params.extend([per_page, offset])
+            
+            cursor.execute(query, params)
+            citas = cursor.fetchall()
             
             # Formatear datos para el frontend
             citas_formateadas = []
-            for cita in citas_paginadas.items:
-                paciente = Paciente.query.get(cita.paciente_id)
-                profesional = Profesional.query.get(cita.medico_id)
+            for cita in citas:
+                # Formatear horario completo
+                horario_completo = f"{cita['hora_inicio']} - {cita['hora_fin']}"
+                if hasattr(cita['hora_inicio'], 'strftime'):
+                    horario_completo = f"{cita['hora_inicio'].strftime('%H:%M')} - {cita['hora_fin'].strftime('%H:%M')}"
+                
+                # Formatear duración
+                duracion_formateada = f"{cita['duracion_minutos']}min"
+                if cita['duracion_minutos'] >= 60:
+                    horas = cita['duracion_minutos'] // 60
+                    minutos = cita['duracion_minutos'] % 60
+                    if minutos > 0:
+                        duracion_formateada = f"{horas}h {minutos}min"
+                    else:
+                        duracion_formateada = f"{horas}h"
                 
                 citas_formateadas.append({
-                    'id': cita.id,
+                    'id': cita['id'],
                     'paciente': {
-                        'id': paciente.id,
-                        'nombre_completo': paciente.nombre_completo,
-                        'dni': paciente.dni
+                        'id': cita['paciente_id'],
+                        'nombre_completo': f"{cita['paciente_nombres']} {cita['paciente_apellidos']}",
+                        'dni': cita['paciente_dni']
                     },
                     'medico': {
-                        'id': profesional.id,
-                        'nombre_completo': profesional.nombre_completo,
-                        'especialidad': profesional.especialidad
+                        'id': cita['medico_id'],
+                        'nombre_completo': f"Dr. {cita['medico_nombres']} {cita['medico_apellidos']}",
+                        'especialidad': cita['especialidad']
                     },
-                    'fecha_cita': cita.fecha_cita.strftime('%d/%m/%Y'),
-                    'fecha_cita_iso': cita.fecha_cita.isoformat(),
-                    'hora_inicio': cita.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': cita.hora_fin.strftime('%H:%M'),
-                    'horario_completo': cita.horario_completo,
-                    'duracion_formateada': cita.duracion_formateada,
-                    'tipo': cita.tipo,
-                    'estado': cita.estado,
-                    'especialidad': cita.especialidad,
-                    'consultorio': cita.consultorio,
-                    'enlace_virtual': cita.enlace_virtual,
-                    'motivo_consulta': cita.motivo_consulta,
-                    'observaciones': cita.observaciones
+                    'fecha_cita': cita['fecha_cita'].strftime('%d/%m/%Y') if hasattr(cita['fecha_cita'], 'strftime') else str(cita['fecha_cita']),
+                    'fecha_cita_iso': cita['fecha_cita'].isoformat() if hasattr(cita['fecha_cita'], 'isoformat') else str(cita['fecha_cita']),
+                    'hora_inicio': cita['hora_inicio'].strftime('%H:%M') if hasattr(cita['hora_inicio'], 'strftime') else str(cita['hora_inicio']),
+                    'hora_fin': cita['hora_fin'].strftime('%H:%M') if hasattr(cita['hora_fin'], 'strftime') else str(cita['hora_fin']),
+                    'horario_completo': horario_completo,
+                    'duracion_formateada': duracion_formateada,
+                    'tipo': cita['tipo'],
+                    'estado': cita['estado'],
+                    'especialidad': cita['especialidad'],
+                    'consultorio': cita.get('consultorio'),
+                    'enlace_virtual': cita.get('enlace_virtual'),
+                    'motivo_consulta': cita.get('motivo_consulta'),
+                    'observaciones': cita.get('observaciones'),
+                    'enfermedad_nombre': cita['enfermedad_nombre']
                 })
+            
+            cursor.close()
             
             return {
                 'success': True,
                 'citas': citas_formateadas,
                 'pagination': {
-                    'page': citas_paginadas.page,
-                    'pages': citas_paginadas.pages,
-                    'per_page': citas_paginadas.per_page,
-                    'total': citas_paginadas.total,
-                    'has_next': citas_paginadas.has_next,
-                    'has_prev': citas_paginadas.has_prev
+                    'page': page,
+                    'pages': (total + per_page - 1) // per_page,
+                    'per_page': per_page,
+                    'total': total,
+                    'has_next': page < ((total + per_page - 1) // per_page),
+                    'has_prev': page > 1
                 }
             }
             
         except Exception as e:
+            print(f"Error al obtener citas con filtros: {str(e)}")
             return {
                 'success': False,
                 'error': f'Error al obtener citas: {str(e)}',
@@ -173,7 +219,7 @@ class AdminCitasMedicas:
             }
     
     @staticmethod
-    def obtener_estadisticas_citas():
+    def obtener_estadisticas_citas(mysql):
         """
         Obtiene estadísticas generales de las citas.
         
@@ -181,30 +227,47 @@ class AdminCitasMedicas:
             dict: Estadísticas de citas
         """
         try:
+            cursor = mysql.connection.cursor()
             hoy = date.today()
             
             # Total de citas
-            total_citas = Cita.query.count()
+            cursor.execute("SELECT COUNT(*) as total FROM citas")
+            total_citas = cursor.fetchone()['total']
             
             # Citas de hoy
-            citas_hoy = Cita.query.filter(Cita.fecha_cita == hoy).count()
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE fecha_cita = %s", (hoy,))
+            citas_hoy = cursor.fetchone()['total']
             
             # Citas por estado
-            citas_agendadas = Cita.query.filter(Cita.estado == 'AGENDADA').count()
-            citas_atendidas = Cita.query.filter(Cita.estado == 'ATENDIDA').count()
-            citas_canceladas = Cita.query.filter(Cita.estado == 'CANCELADA').count()
-            citas_no_atendidas = Cita.query.filter(Cita.estado == 'NO_ATENDIDA').count()
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE estado = 'AGENDADA'")
+            citas_agendadas = cursor.fetchone()['total']
+            
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE estado = 'ATENDIDA'")
+            citas_atendidas = cursor.fetchone()['total']
+            
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE estado = 'CANCELADA'")
+            citas_canceladas = cursor.fetchone()['total']
+            
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE estado = 'NO_ATENDIDA'")
+            citas_no_atendidas = cursor.fetchone()['total']
             
             # Citas por tipo
-            citas_presenciales = Cita.query.filter(Cita.tipo == 'PRESENCIAL').count()
-            citas_virtuales = Cita.query.filter(Cita.tipo == 'VIRTUAL').count()
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE tipo = 'PRESENCIAL'")
+            citas_presenciales = cursor.fetchone()['total']
+            
+            cursor.execute("SELECT COUNT(*) as total FROM citas WHERE tipo = 'VIRTUAL'")
+            citas_virtuales = cursor.fetchone()['total']
             
             # Estadísticas por especialidad
-            stats_especialidad = {}
-            especialidades = db.session.query(Cita.especialidad).distinct().all()
-            for (especialidad,) in especialidades:
-                count = Cita.query.filter(Cita.especialidad == especialidad).count()
-                stats_especialidad[especialidad] = count
+            cursor.execute("""
+                SELECT especialidad, COUNT(*) as count 
+                FROM citas 
+                GROUP BY especialidad
+            """)
+            especialidades_result = cursor.fetchall()
+            stats_especialidad = {row['especialidad']: row['count'] for row in especialidades_result}
+            
+            cursor.close()
             
             return {
                 'total_citas': total_citas,
@@ -223,12 +286,13 @@ class AdminCitasMedicas:
             }
             
         except Exception as e:
+            print(f"Error al obtener estadísticas de citas: {str(e)}")
             return {
                 'error': f'Error al obtener estadísticas: {str(e)}'
             }
     
     @staticmethod
-    def obtener_citas_hoy():
+    def obtener_citas_hoy(mysql):
         """
         Obtiene las citas programadas para hoy.
         
@@ -236,34 +300,37 @@ class AdminCitasMedicas:
             list: Lista de citas de hoy con información completa
         """
         try:
+            cursor = mysql.connection.cursor()
             hoy = date.today()
             
-            citas_hoy = Cita.query.filter(
-                Cita.fecha_cita == hoy
-            ).join(
-                Paciente, Cita.paciente_id == Paciente.id
-            ).join(
-                Profesional, Cita.medico_id == Profesional.id
-            ).order_by(
-                asc(Cita.hora_inicio)
-            ).all()
+            query = """
+                SELECT c.*, 
+                       pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos
+                FROM citas c
+                JOIN pacientes pac ON c.paciente_id = pac.id
+                JOIN profesionales prof ON c.medico_id = prof.id
+                WHERE c.fecha_cita = %s
+                ORDER BY c.hora_inicio ASC
+            """
+            
+            cursor.execute(query, (hoy,))
+            citas_hoy = cursor.fetchall()
+            cursor.close()
             
             citas_formateadas = []
             for cita in citas_hoy:
-                paciente = Paciente.query.get(cita.paciente_id)
-                profesional = Profesional.query.get(cita.medico_id)
-                
                 citas_formateadas.append({
-                    'id': cita.id,
-                    'paciente_nombre': paciente.nombre_completo,
-                    'medico_nombre': profesional.nombre_completo,
-                    'especialidad': cita.especialidad,
-                    'hora_inicio': cita.hora_inicio.strftime('%H:%M'),
-                    'hora_fin': cita.hora_fin.strftime('%H:%M'),
-                    'tipo': cita.tipo,
-                    'estado': cita.estado,
-                    'consultorio': cita.consultorio,
-                    'enlace_virtual': cita.enlace_virtual
+                    'id': cita['id'],
+                    'paciente_nombre': f"{cita['paciente_nombres']} {cita['paciente_apellidos']}",
+                    'medico_nombre': f"Dr. {cita['medico_nombres']} {cita['medico_apellidos']}",
+                    'especialidad': cita['especialidad'],
+                    'hora_inicio': cita['hora_inicio'].strftime('%H:%M') if hasattr(cita['hora_inicio'], 'strftime') else str(cita['hora_inicio']),
+                    'hora_fin': cita['hora_fin'].strftime('%H:%M') if hasattr(cita['hora_fin'], 'strftime') else str(cita['hora_fin']),
+                    'tipo': cita['tipo'],
+                    'estado': cita['estado'],
+                    'consultorio': cita.get('consultorio'),
+                    'enlace_virtual': cita.get('enlace_virtual')
                 })
             
             return citas_formateadas

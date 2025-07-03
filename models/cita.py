@@ -7,113 +7,7 @@ class Cita:
     
     def __init__(self, mysql):
         self.mysql = mysql
-    
-    @classmethod
-    def crear_cita(cls, mysql, datos_cita):
-        """Crea una nueva cita y actualiza el horario disponible"""
-        try:
-            # Validaciones básicas
-            if not datos_cita.get('paciente_id'):
-                return {'success': False, 'error': 'paciente_id requerido'}
-            
-            if not datos_cita.get('horario_id'):
-                return {'success': False, 'error': 'horario_id requerido'}
-                
-            if not datos_cita.get('enfermedad_id'):
-                return {'success': False, 'error': 'enfermedad_id requerido'}
-            
-            cursor = mysql.connection.cursor()
-            
-            # Obtener y verificar el horario
-            query_horario = """
-                SELECT * FROM horarios_disponibles 
-                WHERE id = %s AND estado = 'ACTIVO'
-            """
-            cursor.execute(query_horario, (datos_cita['horario_id'],))
-            horario = cursor.fetchone()
-            
-            if not horario:
-                cursor.close()
-                return {'success': False, 'error': 'Horario no disponible'}
-            
-            # Verificar asignación médico-paciente-enfermedad
-            query_asignacion = """
-                SELECT medico_id FROM paciente_enfermedad_medico 
-                WHERE paciente_id = %s AND enfermedad_id = %s AND estado = 'ACTIVO'
-            """
-            cursor.execute(query_asignacion, (datos_cita['paciente_id'], datos_cita['enfermedad_id']))
-            asignacion = cursor.fetchone()
-            
-            if not asignacion:
-                cursor.close()
-                return {'success': False, 'error': 'No hay médico asignado para esta enfermedad'}
-            
-            # Obtener especialidad del médico
-            query_profesional = """
-                SELECT especialidad FROM profesionales WHERE id = %s
-            """
-            cursor.execute(query_profesional, (asignacion['medico_id'],))
-            profesional = cursor.fetchone()
-            
-            if not profesional:
-                cursor.close()
-                return {'success': False, 'error': 'Médico no encontrado'}
-            
-            # Crear enlace virtual si es necesario
-            enlace_virtual = None
-            if datos_cita.get('tipo', 'PRESENCIAL') == 'VIRTUAL':
-                enlace_virtual = f"https://meet.clinic.com/cita-{datos_cita['horario_id']}"
-            
-            # Crear la cita
-            query_cita = """
-                INSERT INTO citas 
-                (paciente_id, medico_id, horario_id, enfermedad_id, fecha_cita, hora_inicio, hora_fin, 
-                 duracion_minutos, tipo, consultorio, especialidad, motivo_consulta, enlace_virtual, estado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            
-            cursor.execute(query_cita, (
-                datos_cita['paciente_id'],
-                asignacion['medico_id'],
-                datos_cita['horario_id'],
-                datos_cita['enfermedad_id'],
-                horario['fecha'],
-                horario['hora_inicio'],
-                horario['hora_fin'],
-                datos_cita.get('duracion_minutos', 60),
-                datos_cita.get('tipo', 'PRESENCIAL'),
-                horario['consultorio'],
-                profesional['especialidad'],
-                datos_cita.get('motivo_consulta', ''),
-                enlace_virtual,
-                'AGENDADA'
-            ))
-            
-            cita_id = cursor.lastrowid
-            
-            # Actualizar el horario a INACTIVO
-            query_update_horario = """
-                UPDATE horarios_disponibles 
-                SET estado = 'INACTIVO' 
-                WHERE id = %s
-            """
-            cursor.execute(query_update_horario, (datos_cita['horario_id'],))
-            
-            mysql.connection.commit()
-            cursor.close()
-            
-            print(f"Cita creada exitosamente con ID: {cita_id}")
-            return {
-                'success': True,
-                'cita_id': cita_id,
-                'message': f'Cita agendada para el {horario["fecha"]}'
-            }
-            
-        except Exception as e:
-            mysql.connection.rollback()
-            print(f"Error al crear cita: {str(e)}")
-            return {'success': False, 'error': f'Error: {str(e)}'}
-    
+     
     @classmethod
     def cancelar_cita(cls, mysql, cita_id):
         """Cancela una cita y libera el horario"""
@@ -380,43 +274,8 @@ class Cita:
             mysql.connection.rollback()
             print(f"Error al actualizar estado de cita: {str(e)}")
             return {'success': False, 'error': f'Error: {str(e)}'}
-    
-    @classmethod
-    def obtener_estadisticas_citas(cls, mysql, fecha_desde=None, fecha_hasta=None):
-        """Obtiene estadísticas de citas"""
-        try:
-            cursor = mysql.connection.cursor()
-            
-            query_base = """
-                SELECT 
-                    COUNT(*) as total_citas,
-                    SUM(CASE WHEN estado = 'AGENDADA' THEN 1 ELSE 0 END) as agendadas,
-                    SUM(CASE WHEN estado = 'ATENDIDA' THEN 1 ELSE 0 END) as atendidas,
-                    SUM(CASE WHEN estado = 'NO_ATENDIDA' THEN 1 ELSE 0 END) as no_atendidas,
-                    SUM(CASE WHEN estado = 'CANCELADA' THEN 1 ELSE 0 END) as canceladas
-                FROM citas 
-                WHERE 1=1
-            """
-            params = []
-            
-            if fecha_desde:
-                query_base += " AND fecha_cita >= %s"
-                params.append(fecha_desde)
-            
-            if fecha_hasta:
-                query_base += " AND fecha_cita <= %s"
-                params.append(fecha_hasta)
-            
-            cursor.execute(query_base, params)
-            estadisticas = cursor.fetchone()
-            cursor.close()
-            
-            return estadisticas
-            
-        except Exception as e:
-            print(f"Error al obtener estadísticas de citas: {str(e)}")
-            return None
-    
+
+   
     @staticmethod
     def formatear_duracion(duracion_minutos):
         """Retorna la duración de la cita en formato legible"""

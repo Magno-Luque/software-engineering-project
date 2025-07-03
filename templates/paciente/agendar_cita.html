@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita Médica</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .step {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .step.active {
+            border-color: #2c5aa0;
+            background: #e3f2fd;
+        }
+        
+        .step-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .step-number {
+            background: #2c5aa0;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+        
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .horario-card {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .horario-card:hover {
+            border-color: #2c5aa0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.2);
+        }
+        
+        .horario-card.selected {
+            border-color: #2c5aa0;
+            background: #e3f2fd;
+        }
+        
+        .horario-fecha {
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+        
+        .horario-hora {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .horario-medico {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .horario-tipo {
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            display: inline-block;
+        }
+        
+        .horario-tipo.VIRTUAL {
+            background: #007bff;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2c5aa0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Agendar Cita Médica</h1>
+            <p>Selecciona tu enfermedad y encuentra el horario perfecto con tu médico asignado</p>
+        </div>
+        
+        <div class="content">
+            <!-- Alertas -->
+            <div id="alertContainer"></div>
+            
+            <!-- Paso 1: Seleccionar Enfermedad -->
+            <div class="step active" id="paso1">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    Selecciona tu Enfermedad
+                </div>
+                
+                <div class="form-group">
+                    <label for="enfermedadSelect">¿Para qué enfermedad necesitas consulta?</label>
+                    <select id="enfermedadSelect">
+                        <option value="">Selecciona una enfermedad...</option>
+                    </select>
+                </div>
+                
+                <button class="btn" onclick="siguientePaso()" id="btnSiguiente1" disabled>
+                    Siguiente: Ver Horarios Disponibles
+                </button>
+            </div>
+            
+            <!-- Paso 2: Seleccionar Horario -->
+            <div class="step hidden" id="paso2">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    Selecciona Horario Disponible
+                </div>
+                
+                <div class="form-group">
+                    <label>Filtrar por fecha (opcional):</label>
+                    <input type="date" id="fechaFiltro" min="">
+                </div>
+                
+                <div class="loading" id="loadingHorarios">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando horarios disponibles...</p>
+                </div>
+                
+                <div id="horariosContainer">
+                    <div class="horarios-grid" id="horariosGrid">
+                        <!-- Los horarios se cargan dinámicamente -->
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="anteriorPaso()">
+                        Anterior
+                    </button>
+                    <button class="btn" onclick="siguientePaso()" id="btnSiguiente2" disabled>
+                        Siguiente: Confirmar Cita
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Paso 3: Confirmar Cita -->
+            <div class="step hidden" id="paso3">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    Confirmar Datos de la Cita
+                </div>
+                
+                <div id="resumenCita" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <!-- Resumen se llena dinámicamente -->
+                </div>
+                
+                <div class="form-group">
+                    <label for="motivoConsulta">Motivo de la consulta *</label>
+                    <textarea id="motivoConsulta" rows="4" placeholder="Describe brevemente el motivo de tu consulta..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observaciones">Observaciones adicionales (opcional)</label>
+                    <textarea id="observaciones" rows="3" placeholder="Cualquier información adicional que consideres importante..."></textarea>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="anteriorPaso()">
+                        Anterior
+                    </button>
+                    <button class="btn" onclick="agendarCita()" id="btnAgendar">
+                        🗓️ Agendar Cita
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Paso 4: Confirmación -->
+            <div class="step hidden" id="paso4">
+                <div class="step-title">
+                    <span class="step-number">✓</span>
+                    ¡Cita Agendada Exitosamente!
+                </div>
+                
+                <div id="confirmacionCita" style="text-align: center; padding: 30px;">
+                    <!-- Confirmación se llena dinámicamente -->
+                </div>
+                
+                <div style="text-align: center;">
+                    <button class="btn" onclick="nuevaCita()">
+                        Agendar Nueva Cita
+                    </button>
+                    <button class="btn btn-secondary" onclick="verMisCitas()">
+                        Ver Mis Citas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let pasoActual = 1;
+        let enfermedadSeleccionada = null;
+        let horarioSeleccionado = null;
+        let horariosDisponibles = [];
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarEnfermedades();
+            configurarFechaMinima();
+            configurarEventos();
+        });
+        
+        function configurarFechaMinima() {
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fechaFiltro').min = hoy;
+        }
+        
+        function configurarEventos() {
+            document.getElementById('enfermedadSelect').addEventListener('change', function() {
+                const tieneSeleccion = this.value !== '';
+                document.getElementById('btnSiguiente1').disabled = !tieneSeleccion;
+                if (tieneSeleccion) {
+                    enfermedadSeleccionada = JSON.parse(this.value);
+                }
+            });
+            
+            document.getElementById('fechaFiltro').addEventListener('change', function() {
+                if (horarioSeleccionado) {
+                    filtrarHorarios();
+                }
+            });
+            
+            document.getElementById('motivoConsulta').addEventListener('input', function() {
+                const tieneMotivo = this.value.trim() !== '';
+                document.getElementById('btnAgendar').disabled = !tieneMotivo;
+            });
+        }
+        
+        async function cargarEnfermedades() {
+            try {
+                const response = await fetch('/paciente/citas/enfermedades');
+                const data = await response.json();
+                
+                if (data.exito) {
+                    const select = document.getElementById('enfermedadSelect');
+                    
+                    data.enfermedades.forEach(enfermedad => {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify(enfermedad);
+                        option.textContent = `${enfermedad.codigo} - ${enfermedad.nombre} (${enfermedad.especialidad_requerida})`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    mostrarAlerta('Error al cargar enfermedades: ' + data.error, 'error');
+                }
+            } catch (error) {
+                mostrarAlerta('Error de conexión al cargar enfermedades', 'error');
+            }
+        }
+        
+        async function cargarHorarios() {
+            try {
+                document.getElementById('loadingHorarios').style.display = 'block';
+                document.getElementById('horariosContainer').style.display = 'none';
+                
+                const fechaFiltro = document.getElementById('fechaFiltro').value;
+                const fechaDesde = fechaFiltro || new Date().toISOString().split('T')[0];
+                const fechaHasta = new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0];
+                
+                const response = await fetch(`/paciente/citas/horarios-disponibles?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&especialidad=${enfermedadSeleccionada.especialidad_requerida}`);
+                const data = await response.json();
+                
+                if (data.exito) {
+                    horariosDisponibles = data.horarios_por_fecha;
+                    renderizarHorarios();
+                } else {
+                    mostrarAlerta('Error al cargar horarios: ' + data.error, 'error');
+                }
+                
+            } catch (error) {
+                mostrarAlerta('Error de conexión al cargar horarios', 'error');
+            } finally {
+                document.getElementById('loadingHorarios').style.display = 'none';
+                document.getElementById('horariosContainer').style.display = 'block';
+            }
+        }
+        
+        function renderizarHorarios() {
+            const grid = document.getElementById('horariosGrid');
+            grid.innerHTML = '';
+            
+            if (Object.keys(horariosDisponibles).length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">No hay horarios disponibles para esta enfermedad en las fechas seleccionadas.</p>';
+                return;
+            }
+            
+            Object.keys(horariosDisponibles).sort().forEach(fecha => {
+                horariosDisponibles[fecha].forEach(horario => {
+                    // Filtrar solo horarios para la enfermedad seleccionada
+                    if (horario.enfermedad.id === enfermedadSeleccionada.id) {
+                        const card = crearTarjetaHorario(fecha, horario);
+                        grid.appendChild(card);
+                    }
+                });
+            });
+        }
+        
+        function crearTarjetaHorario(fecha, horario) {
+            const card = document.createElement('div');
+            card.className = 'horario-card';
+            card.dataset.horarioId = horario.id;
+            
+            const fechaObj = new Date(fecha + 'T00:00:00');
+            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            card.innerHTML = `
+                <div class="horario-fecha">${fechaFormateada}</div>
+                <div class="horario-hora">${horario.hora_inicio} - ${horario.hora_fin}</div>
+                <div class="horario-medico">${horario.medico.nombre}</div>
+                <div class="horario-medico">${horario.medico.especialidad}</div>
+                <span class="horario-tipo ${horario.tipo}">${horario.tipo}</span>
+                ${horario.consultorio ? `<div style="font-size: 0.8em; color: #666; margin-top: 5px;">${horario.consultorio}</div>` : ''}
+            `;
+            
+            card.addEventListener('click', function() {
+                // Quitar selección anterior
+                document.querySelectorAll('.horario-card').forEach(c => c.classList.remove('selected'));
+                
+                // Seleccionar este horario
+                card.classList.add('selected');
+                horarioSeleccionado = horario;
+                horarioSeleccionado.fecha = fecha;
+                
+                document.getElementById('btnSiguiente2').disabled = false;
+            });
+            
+            return card;
+        }
+        
+        function filtrarHorarios() {
+            const fechaFiltro = document.getElementById('fechaFiltro').value;
+            const cards = document.querySelectorAll('.horario-card');
+            
+            cards.forEach(card => {
+                if (!fechaFiltro) {
+                    card.style.display = 'block';
+                } else {
+                    const fechaCard = card.querySelector('.horario-fecha').textContent;
+                    const fechaObj = new Date(fechaFiltro + 'T00:00:00');
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    card.style.display = fechaCard === fechaFormateada ? 'block' : 'none';
+                }
+            });
+        }
+        
+        function siguientePaso() {
+            if (pasoActual === 1) {
+                cargarHorarios();
+            } else if (pasoActual === 2) {
+                mostrarResumenCita();
+            }
+            
+            document.getElementById(`paso${pasoActual}`).classList.add('hidden');
+            document.getElementById(`paso${pasoActual}`).classList.remove('active');
+            
+            pasoActual++;
+            
+            document.getElementById(`paso${pasoActual}`).classList.remove('hidden');
+            document.getElementById(`paso${pasoActual}`).classList.add('active');
+        }
+        
+        function anteriorPaso() {
+            document.getElementById(`paso${pasoActual}`).classList.add('hidden');
+            document.getElementById(`paso${pasoActual}`).classList.remove('active');
+            
+            pasoActual--;
+            
+            document.getElementById(`paso${pasoActual}`).classList.remove('hidden');
+            document.getElementById(`paso${pasoActual}`).classList.add('active');
+        }
+        
+        function mostrarResumenCita() {
+            const resumen = document.getElementById('resumenCita');
+            
+            const fechaObj = new Date(horarioSeleccionado.fecha + 'T00:00:00');
+            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            resumen.innerHTML = `
+                <h3 style="color: #2c5aa0; margin-bottom: 20px;">📋 Resumen de tu Cita</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div>
+                        <strong>🏥 Enfermedad:</strong><br>
+                        ${enfermedadSeleccionada.codigo} - ${enfermedadSeleccionada.nombre}
+                    </div>
+                    <div>
+                        <strong>👨‍⚕️ Médico:</strong><br>
+                        ${horarioSeleccionado.medico.nombre}<br>
+                        <small>${horarioSeleccionado.medico.especialidad}</small>
+                    </div>
+                    <div>
+                        <strong>📅 Fecha:</strong><br>
+                        ${fechaFormateada}
+                    </div>
+                    <div>
+                        <strong>🕐 Horario:</strong><br>
+                        ${horarioSeleccionado.hora_inicio} - ${horarioSeleccionado.hora_fin}
+                    </div>
+                    <div>
+                        <strong>📍 Tipo:</strong><br>
+                        ${horarioSeleccionado.tipo}
+                        ${horarioSeleccionado.consultorio ? `<br><small>${horarioSeleccionado.consultorio}</small>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function agendarCita() {
+            const motivoConsulta = document.getElementById('motivoConsulta').value.trim();
+            const observaciones = document.getElementById('observaciones').value.trim();
+            
+            if (!motivoConsulta) {
+                mostrarAlerta('El motivo de la consulta es obligatorio', 'error');
+                return;
+            }
+            
+            try {
+                document.getElementById('btnAgendar').disabled = true;
+                document.getElementById('btnAgendar').textContent = 'Agendando...';
+                
+                const datosAgendar = {
+                    horario_id: horarioSeleccionado.id,
+                    enfermedad_id: enfermedadSeleccionada.id,
+                    motivo_consulta: motivoConsulta,
+                    observaciones: observaciones
+                };
+                
+                const response = await fetch('/paciente/citas/crear', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosAgendar)
+                });
+                
+                const result = await response.json();
+                
+                if (result.exito) {
+                    mostrarConfirmacion(result);
+                    siguientePaso();
+                } else {
+                    mostrarAlerta('Error al agendar la cita: ' + result.error, 'error');
+                }
+                
+            } catch (error) {
+                mostrarAlerta('Error de conexión al agendar la cita', 'error');
+            } finally {
+                document.getElementById('btnAgendar').disabled = false;
+                document.getElementById('btnAgendar').textContent = '🗓️ Agendar Cita';
+            }
+        }
+        
+        function mostrarConfirmacion(resultado) {
+            const confirmacion = document.getElementById('confirmacionCita');
+            
+            confirmacion.innerHTML = `
+                <div style="color: #28a745; font-size: 4em; margin-bottom: 20px;">
+                    ✅
+                </div>
+                <h2 style="color: #28a745; margin-bottom: 20px;">¡Cita Agendada Exitosamente!</h2>
+                <div style="background: white; padding: 25px; border-radius: 10px; border: 2px solid #28a745; margin: 20px 0;">
+                    <h3 style="color: #2c5aa0; margin-bottom: 15px;">📄 Detalles de tu Cita</h3>
+                    <p><strong>📋 ID de Cita:</strong> #${resultado.cita_id}</p>
+                    <p><strong>👨‍⚕️ Médico:</strong> ${resultado.detalles.medico}</p>
+                    <p><strong>🏥 Especialidad:</strong> ${resultado.detalles.especialidad}</p>
+                    <p><strong>📅 Fecha:</strong> ${new Date(resultado.detalles.fecha).toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    })}</p>
+                    <p><strong>🕐 Horario:</strong> ${resultado.detalles.hora_inicio} - ${resultado.detalles.hora_fin}</p>
+                    <p><strong>📍 Tipo:</strong> ${resultado.detalles.tipo}</p>
+                    ${resultado.detalles.consultorio ? `<p><strong>🏢 Consultorio:</strong> ${resultado.detalles.consultorio}</p>` : ''}
+                    ${resultado.detalles.enlace_virtual ? `<p><strong>💻 Enlace Virtual:</strong> <a href="${resultado.detalles.enlace_virtual}" target="_blank">${resultado.detalles.enlace_virtual}</a></p>` : ''}
+                </div>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h4 style="color: #856404; margin-bottom: 10px;">📝 Importante:</h4>
+                    <ul style="text-align: left; color: #856404;">
+                        <li>Llega 15 minutos antes de tu cita</li>
+                        <li>Trae tu documento de identidad</li>
+                        <li>Si necesitas cancelar, hazlo con al menos 2 horas de anticipación</li>
+                        ${resultado.detalles.tipo === 'VIRTUAL' ? '<li>Asegúrate de tener una buena conexión a internet</li>' : ''}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        function mostrarAlerta(mensaje, tipo) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo}`;
+            alert.innerHTML = `
+                <strong>${tipo === 'error' ? '❌ Error:' : '✅ Éxito:'}</strong> ${mensaje}
+                <button onclick="this.parentElement.remove()" style="float: right; background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+            `;
+            
+            container.appendChild(alert);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (alert.parentElement) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+        
+        function nuevaCita() {
+            // Resetear todo
+            pasoActual = 1;
+            enfermedadSeleccionada = null;
+            horarioSeleccionado = null;
+            horariosDisponibles = [];
+            
+            // Ocultar todos los pasos
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`paso${i}`).classList.add('hidden');
+                document.getElementById(`paso${i}`).classList.remove('active');
+            }
+            
+            // Mostrar paso 1
+            document.getElementById('paso1').classList.remove('hidden');
+            document.getElementById('paso1').classList.add('active');
+            
+            // Resetear formularios
+            document.getElementById('enfermedadSelect').value = '';
+            document.getElementById('fechaFiltro').value = '';
+            document.getElementById('motivoConsulta').value = '';
+            document.getElementById('observaciones').value = '';
+            
+            // Resetear botones
+            document.getElementById('btnSiguiente1').disabled = true;
+            document.getElementById('btnSiguiente2').disabled = true;
+            
+            // Limpiar alertas
+            document.getElementById('alertContainer').innerHTML = '';
+        }
+        
+        function verMisCitas() {
+            // Redirigir a la página de mis citas
+            window.location.href = '/paciente/mis-citas';
+        }
+    </script>
+</body>
+</html>

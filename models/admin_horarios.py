@@ -17,7 +17,9 @@ class HorarioDisponible:
                 SELECT h.*, p.nombres, p.apellidos, p.especialidad 
                 FROM horarios_disponibles h
                 JOIN profesionales p ON h.medico_id = p.id
-                WHERE h.fecha >= %s AND h.fecha <= %s
+                WHERE h.fecha >= %s AND h.fecha <= %s 
+                AND h.estado = 'ACTIVO'
+                AND p.estado = 'ACTIVO'
                 ORDER BY h.fecha, h.hora_inicio
             """
             cursor.execute(query, (fecha_inicio, fecha_fin))

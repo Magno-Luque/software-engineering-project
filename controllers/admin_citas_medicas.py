@@ -7,7 +7,7 @@ from datetime import date
 def obtener_citas_medicas():
     """
     Obtiene todas las citas médicas para mostrar en la tabla.
-    """
+    """ 
     try:
         from app import mysql
         citas = Cita.obtener_citas_hoy(mysql)  # O crear un método para obtener todas
@@ -66,7 +66,7 @@ def obtener_citas_con_filtros(fecha=None, medico_id=None, especialidad=None,
         params = []
         
         # Aplicar filtros
-        if fecha:
+        if fecha and fecha != 'todas':
             query += " AND c.fecha_cita = %s"
             params.append(fecha)
         
@@ -91,10 +91,47 @@ def obtener_citas_con_filtros(fecha=None, medico_id=None, especialidad=None,
             busqueda_like = f"%{busqueda}%"
             params.extend([busqueda_like, busqueda_like, busqueda_like])
         
-        # Contar total de registros
-        count_query = query.replace("SELECT c.*, pac.nombres as paciente_nombres, pac.apellidos as paciente_apellidos, pac.dni as paciente_dni, prof.nombres as medico_nombres, prof.apellidos as medico_apellidos, e.nombre as enfermedad_nombre", "SELECT COUNT(*)")
-        cursor.execute(count_query, params)
-        total = cursor.fetchone()['COUNT(*)']
+        # Contar total de registros - CORREGIDO
+        count_query = """
+            SELECT COUNT(*) as total
+            FROM citas c
+            JOIN pacientes pac ON c.paciente_id = pac.id
+            JOIN profesionales prof ON c.medico_id = prof.id
+            JOIN enfermedades e ON c.enfermedad_id = e.id
+            WHERE 1=1
+        """
+        
+        # Aplicar los mismos filtros para el conteo
+        count_params = []
+        if fecha and fecha != 'todas':
+            count_query += " AND c.fecha_cita = %s"
+            count_params.append(fecha)
+        
+        if medico_id and medico_id != 'todos':
+            count_query += " AND c.medico_id = %s"
+            count_params.append(medico_id)
+        
+        if especialidad and especialidad != 'todas':
+            count_query += " AND c.especialidad = %s"
+            count_params.append(especialidad)
+        
+        if estado and estado != 'todos':
+            count_query += " AND c.estado = %s"
+            count_params.append(estado)
+        
+        if tipo and tipo != 'todos':
+            count_query += " AND c.tipo = %s"
+            count_params.append(tipo)
+        
+        if busqueda:
+            count_query += " AND (pac.nombres LIKE %s OR pac.apellidos LIKE %s OR pac.dni LIKE %s)"
+            busqueda_like = f"%{busqueda}%"
+            count_params.extend([busqueda_like, busqueda_like, busqueda_like])
+        
+        # Ejecutar conteo
+        cursor.execute(count_query, count_params)
+        count_result = cursor.fetchone()
+        total = count_result['total'] if count_result else 0
         
         # Aplicar paginación
         query += " ORDER BY c.fecha_cita DESC, c.hora_inicio DESC"
@@ -102,6 +139,7 @@ def obtener_citas_con_filtros(fecha=None, medico_id=None, especialidad=None,
         query += " LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
         
+        # Ejecutar query principal
         cursor.execute(query, params)
         citas = cursor.fetchall()
         cursor.close()
@@ -136,17 +174,28 @@ def obtener_citas_con_filtros(fecha=None, medico_id=None, especialidad=None,
                 'page': page,
                 'per_page': per_page,
                 'total': total,
-                'pages': (total + per_page - 1) // per_page
+                'pages': (total + per_page - 1) // per_page if total > 0 else 1,
+                'has_next': page < ((total + per_page - 1) // per_page) if total > 0 else False,
+                'has_prev': page > 1
             }
         }
         
     except Exception as e:
         print(f"Error en obtener_citas_con_filtros: {str(e)}")
+        import traceback
+        traceback.print_exc()  # Para ver el error completo
         return {
             'exito': False,
             'error': f'Error interno: {str(e)}',
             'citas': [],
-            'pagination': {}
+            'pagination': {
+                'page': 1,
+                'per_page': per_page,
+                'total': 0,
+                'pages': 1,
+                'has_next': False,
+                'has_prev': False
+            }
         }
 
 def obtener_medicos_para_filtro():

@@ -19,9 +19,15 @@ def obtener_horarios_semana(fecha_referencia=None):
         dias_hasta_lunes = fecha_referencia.weekday()
         lunes = fecha_referencia - timedelta(days=dias_hasta_lunes)
         viernes = lunes + timedelta(days=4)
+         
+        print(f"Buscando horarios entre {lunes} y {viernes}")
         
         # Obtener horarios de la semana
         horarios_semana = HorarioDisponible.obtener_horarios_semana(mysql, lunes, viernes)
+        
+        print(f"Horarios encontrados: {len(horarios_semana)}")
+        for h in horarios_semana:
+            print(f"  - ID: {h['id']}, Fecha: {h['fecha']}, Hora: {h['hora_inicio']}-{h['hora_fin']}, Médico: {h['nombres']} {h['apellidos']}")
         
         # Inicializar estructura de días
         datos_dias = {}
@@ -29,7 +35,8 @@ def obtener_horarios_semana(fecha_referencia=None):
         
         for i in range(5):  # Lunes a Viernes
             fecha_dia = lunes + timedelta(days=i)
-            datos_dias[fecha_dia.isoformat()] = {
+            fecha_str = fecha_dia.isoformat()
+            datos_dias[fecha_str] = {
                 'fecha': fecha_dia,
                 'nombre_dia': nombres_dias[i],
                 'horarios': []
@@ -37,12 +44,24 @@ def obtener_horarios_semana(fecha_referencia=None):
         
         # Organizar horarios por día
         for horario in horarios_semana:
-            fecha_iso = horario['fecha'].isoformat() if hasattr(horario['fecha'], 'isoformat') else str(horario['fecha'])
+            # Convertir fecha del horario a string ISO
+            if hasattr(horario['fecha'], 'isoformat'):
+                fecha_iso = horario['fecha'].isoformat()
+            else:
+                # Si ya es string, convertir a date y luego a ISO
+                if isinstance(horario['fecha'], str):
+                    fecha_obj = datetime.strptime(horario['fecha'], '%Y-%m-%d').date()
+                    fecha_iso = fecha_obj.isoformat()
+                else:
+                    fecha_iso = str(horario['fecha'])
+            
+            print(f"Procesando horario para fecha: {fecha_iso}")
+            
             if fecha_iso in datos_dias:
                 # Verificar si el horario está ocupado
                 esta_ocupado = HorarioDisponible.esta_ocupado(mysql, horario['id'])
                 
-                datos_dias[fecha_iso]['horarios'].append({
+                horario_info = {
                     'id': horario['id'],
                     'hora_inicio': horario['hora_inicio'].strftime('%H:%M') if hasattr(horario['hora_inicio'], 'strftime') else str(horario['hora_inicio']),
                     'hora_fin': horario['hora_fin'].strftime('%H:%M') if hasattr(horario['hora_fin'], 'strftime') else str(horario['hora_fin']),
@@ -51,7 +70,12 @@ def obtener_horarios_semana(fecha_referencia=None):
                     'consultorio': horario.get('consultorio') or 'Virtual',
                     'ocupado': esta_ocupado,
                     'observaciones': horario.get('observaciones') or ''
-                })
+                }
+                
+                datos_dias[fecha_iso]['horarios'].append(horario_info)
+                print(f"  - Agregado horario: {horario_info}")
+            else:
+                print(f"  - Fecha {fecha_iso} no está en el rango de la semana")
         
         return {
             'lunes': lunes,
@@ -61,8 +85,10 @@ def obtener_horarios_semana(fecha_referencia=None):
         
     except Exception as e:
         print(f"Error en obtener_horarios_semana: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise e
-
+    
 def obtener_medicos_activos():
     """
     Retorna lista de profesionales activos para formularios de horarios.

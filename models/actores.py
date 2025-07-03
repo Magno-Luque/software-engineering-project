@@ -142,33 +142,40 @@ class Paciente:
         try:
             cursor = mysql.connection.cursor()
             
-            # 1. Insertar paciente
-            query = """
-                INSERT INTO pacientes (dni, nombres, apellidos, fecha_nacimiento, email, telefono, direccion, enfermedades, estado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            
-            enfermedades_json = json.dumps(enfermedades) if enfermedades else None
-            
-            cursor.execute(query, (
-                dni, nombres, apellidos, fecha_nacimiento, email, telefono, 
-                direccion, enfermedades_json, 'ACTIVO'
-            ))
-            
-            paciente_id = cursor.lastrowid
-            
-            # 2. Crear usuario asociado (rol = 'paciente')
+            # 1. Crear usuario asociado (rol = 'paciente')
             nombre_usuario = f"{nombres} {apellidos}"
             primer_nombre = nombres.strip().split()[0]
-            password_plano = primer_nombre  
-            password_hash = bcrypt.hashpw(password_plano.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            password_plano = primer_nombre.lower()
             
+            password_hash = bcrypt.hashpw(password_plano.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
             query_usuario = """
                 INSERT INTO usuarios (usuario, password, rol, activo, correo)
                 VALUES (%s, %s, 'paciente', 1, %s)
             """
             cursor.execute(query_usuario, (nombre_usuario, password_hash, email))
-            
+
+            # Obtener el ID del nuevo usuario
+            usuarios_id1 = cursor.lastrowid
+
+            # 2. Insertar paciente
+            query_paciente = """
+                INSERT INTO pacientes (
+                    dni, nombres, apellidos, fecha_nacimiento, email, telefono, direccion, 
+                    enfermedades, estado, usuarios_id1
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+
+            enfermedades_json = json.dumps(enfermedades) if enfermedades else None
+
+            cursor.execute(query_paciente, (
+                dni, nombres, apellidos, fecha_nacimiento, email, telefono,
+                direccion, enfermedades_json, 'ACTIVO', usuarios_id1
+            ))
+
+            paciente_id = cursor.lastrowid
+
             # 3. Relacionar enfermedades con médicos
             enfermedad_nombre_a_id = {
                 "diabetes": 1,

@@ -237,20 +237,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Mejora en la función cargarHorariosSemana para debugging
     async function cargarHorariosSemana(fechaLunes) {
-        try {            
+        try {
+            console.log(`Cargando horarios para semana del: ${fechaLunes}`);
+            
             const response = await fetch(`/admin/horarios/semana?fecha=${fechaLunes}`);
             const data = await response.json();
             
+            console.log('Respuesta del servidor:', data);
+            
             if (data.exito) {
                 horariosActuales = data.datos_dias;
+                console.log('Datos de horarios procesados:', horariosActuales);
                 renderizarCalendario(data.datos_dias);
             } else {
+                console.error('Error en respuesta:', data.error);
                 mostrarError('Error al cargar horarios: ' + data.error);
             }
             
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error en fetch:', error);
             mostrarError('Error de conexión al cargar horarios');
         } finally {
             hideLoading();
@@ -295,12 +302,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const columna = document.createElement('div');
         columna.className = 'day-slot';
         
+        console.log(`Creando columna para hora ${hora}, día:`, datosDelDia);
+        
         // Buscar horario que coincida con esta hora
         const horarioEncontrado = datosDelDia.horarios.find(h => {
             const horaInicio = h.hora_inicio;
             const horaFin = h.hora_fin;
-            return hora >= horaInicio && hora < horaFin;
+            
+            console.log(`Comparando: ${hora} con rango ${horaInicio} - ${horaFin}`);
+            
+            // Convertir horas a minutos para comparación más precisa
+            const horaActualMinutos = convertirHoraAMinutos(hora);
+            const horaInicioMinutos = convertirHoraAMinutos(horaInicio);
+            const horaFinMinutos = convertirHoraAMinutos(horaFin);
+            
+            // Un slot de hora está en el horario si la hora actual coincide exactamente con la hora de inicio
+            // O si está dentro del rango del horario
+            const coincide = horaActualMinutos >= horaInicioMinutos && horaActualMinutos < horaFinMinutos;
+            
+            console.log(`  Minutos: ${horaActualMinutos} >= ${horaInicioMinutos} && ${horaActualMinutos} < ${horaFinMinutos} = ${coincide}`);
+            
+            return coincide;
         });
+        
+        console.log('Horario encontrado:', horarioEncontrado);
         
         let slot;
         if (horarioEncontrado) {
@@ -325,6 +350,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         columna.appendChild(slot);
         return columna;
+    }
+
+    // Función auxiliar para convertir hora HH:MM a minutos
+    function convertirHoraAMinutos(hora) {
+        const [horas, minutos] = hora.split(':').map(Number);
+        return horas * 60 + minutos;
     }
 
     function crearSlotOcupado(horario) {

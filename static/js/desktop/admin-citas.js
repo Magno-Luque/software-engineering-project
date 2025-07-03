@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================
     // VARIABLES GLOBALES
     // ========================
-    let currentPage = 1;
+    let currentPage = 1; 
     let totalPages = 1;
     const citasPorPagina = 10;
     

@@ -39,7 +39,7 @@ class Usuario:
             }
 
             # Verificar contraseña
-            stored_password = usuario_data['password']      
+            stored_password = usuario_data['password']     
             
             if stored_password.startswith('$2b$'):
                 # Comparación directa para modo desarrollo

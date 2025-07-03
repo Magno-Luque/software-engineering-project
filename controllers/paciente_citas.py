@@ -3,59 +3,6 @@
 from models.cita import Cita
 from flask import session
 
-def crear_cita_paciente(datos_cita):
-    """
-    Crea una nueva cita para el paciente autenticado.
-    """
-    try:
-        # Validaciones básicas
-        campos_requeridos = ['paciente_id', 'horario_id', 'enfermedad_id', 'tipo', 'motivo_consulta']
-        for campo in campos_requeridos:
-            if not datos_cita.get(campo):
-                return {
-                    'exito': False,
-                    'error': f'El campo {campo} es requerido'
-                }
-        
-        # Validar que el paciente_id corresponde al usuario autenticado (seguridad)
-        # usuario_autenticado = session.get('user_id')
-        # if datos_cita['paciente_id'] != usuario_autenticado:
-        #     return {
-        #         'exito': False,
-        #         'error': 'Solo puedes crear citas para tu propio perfil'
-        #     }
-        
-        # Validar valores de tipo
-        tipos_validos = ['PRESENCIAL', 'VIRTUAL']
-        if datos_cita['tipo'] not in tipos_validos:
-            return {
-                'exito': False,
-                'error': f'Tipo debe ser uno de: {", ".join(tipos_validos)}'
-            }
-        
-        # Crear la cita usando el modelo
-        resultado = Cita.crear_cita(datos_cita)
-        
-        if resultado['success']:
-            return {
-                'exito': True,
-                'mensaje': resultado['message'],
-                'cita_id': resultado['cita_id'],
-                'cita': resultado.get('cita')
-            }
-        else:
-            return {
-                'exito': False,
-                'error': resultado['error']
-            }
-        
-    except Exception as e:
-        print(f"Error en crear_cita_paciente: {str(e)}")  # Para debug
-        return {
-            'exito': False,
-            'error': f'Error interno: {str(e)}'
-        }
-
 def obtener_cita_paciente(cita_id):
     """
     Obtiene una cita específica del paciente autenticado.

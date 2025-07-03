@@ -1,3 +1,5 @@
+# app.py
+
 from flask import Flask, render_template, url_for, request, redirect, flash, jsonify, session
 from flask_mysqldb import MySQL
 from functools import wraps
@@ -42,12 +44,10 @@ from controllers.admin_horarios import (
     actualizar_horario_disponible
 )
 
-from controllers.paciente_citas import (
-    crear_cita_paciente,
-    obtener_cita_paciente,
-    cancelar_cita_paciente,
-    listar_citas_paciente,
-    obtener_resumen_dashboard_paciente
+from controllers.cita_paciente import (
+    obtener_enfermedades_paciente,
+    obtener_horarios_disponibles_paciente,
+    crear_cita_paciente
 )
 
 from controllers.admin_citas_medicas import (
@@ -775,10 +775,49 @@ app.register_blueprint(alertas_bp)
 @app.route('/paciente/alertas_criticas')
 def paciente_alertas_criticas():
     return redirect(url_for('alertas.listar_alertascritica'))
+# ================================================================
+# ================================================================
 
+# Ruta para la página principal de citas (ya tienes esta)
 @app.route('/paciente/cita')
 def paciente_cita():
     return render_template('paciente/cita.html')
+
+# API para obtener enfermedades del paciente
+@app.route('/paciente/citas/enfermedades')
+@login_required
+@role_required('paciente')
+def paciente_enfermedades():
+    paciente_id = session.get('user_id')
+    resultado = obtener_enfermedades_paciente(paciente_id)
+    return jsonify(resultado)
+
+# API para obtener horarios disponibles
+@app.route('/paciente/citas/horarios-disponibles')
+@login_required
+@role_required('paciente')
+def paciente_horarios_disponibles():
+    paciente_id = session.get('user_id')
+    fecha_desde = request.args.get('fecha_desde')
+    fecha_hasta = request.args.get('fecha_hasta')
+    especialidad = request.args.get('especialidad', 'todas')
+    
+    resultado = obtener_horarios_disponibles_paciente(
+        paciente_id, fecha_desde, fecha_hasta, especialidad
+    )
+    return jsonify(resultado)
+
+# API para crear cita
+@app.route('/paciente/citas/crear', methods=['POST'])
+@login_required
+@role_required('paciente')
+def paciente_crear_cita():
+    paciente_id = session.get('user_id')
+    datos = request.get_json()
+    datos['paciente_id'] = paciente_id
+    
+    resultado = crear_cita_paciente(datos)
+    return jsonify(resultado)
 
 @app.route('/paciente/educacion_en_salud')
 def paciente_educacion_en_salud():
@@ -817,41 +856,7 @@ def cuidador_dashboard():
     """Panel principal para cuidadores"""
     return render_template('cuidador/dashboard.html')
 
-# ==============================================================================
-# API PARA CREAR CITAS (EJEMPLO)
-# ==============================================================================
 
-@app.route('/admin/citas/crear', methods=['POST'])
-@login_required
-@role_required('admin', 'paciente')
-def paciente_crear_cita_api():
-    """API para crear una nueva cita."""
-    try:
-        if not request.is_json:
-            return jsonify({
-                'exito': False,
-                'error': 'Content-Type debe ser application/json'
-            }), 400
-        
-        datos = request.get_json()
-        if not datos:
-            return jsonify({
-                'exito': False,
-                'error': 'Body vacío'
-            }), 400
-        
-        resultado = crear_cita_paciente(datos)
-        
-        if resultado['exito']:
-            return jsonify(resultado), 201
-        else:
-            return jsonify(resultado), 400
-            
-    except Exception as e:
-        return jsonify({
-            'exito': False,
-            'error': f'Error interno: {str(e)}'
-        }), 500
 
 # ==============================================================================
 # EJECUCIÓN PRINCIPAL

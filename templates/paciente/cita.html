@@ -1,3 +1,5 @@
+<!-- templates/paciente/citas.html  -->
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,17 +13,89 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/desktop-layout.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/paciente.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/citas.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="desktop-layout">
         {% include 'shared/sidebar_paciente.html' %}
-
         <div class="main-content">
-
             <div class="dashboard-container">
-                <h1>Inicio</h1>
+                <h1><i class="fas fa-calendar-check"></i> Agendar Cita</h1>
+                
+                <!-- Paso 1: Seleccionar Enfermedad -->
+                <div class="card" id="paso1">
+                    <h3>1. Selecciona tu enfermedad</h3>
+                    <div class="form-group">
+                        <label for="enfermedadSelect">Enfermedad:</label>
+                        <select id="enfermedadSelect" class="form-input">
+                            <option value="">Selecciona una enfermedad...</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="buscarHorarios()" id="btnBuscar" disabled>
+                        <i class="fas fa-search"></i> Buscar Horarios
+                    </button>
+                </div>
+
+                <!-- Paso 2: Seleccionar Horario -->
+                <div class="card hidden" id="paso2">
+                    <h3>2. Selecciona un horario disponible</h3>
+                    <div id="horariosContainer">
+                        <!-- Los horarios se cargan aquí -->
+                    </div>
+                    <button class="btn btn-secondary" onclick="volverPaso1()">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <button class="btn btn-primary" onclick="mostrarFormulario()" id="btnContinuar" disabled>
+                        <i class="fas fa-arrow-right"></i> Continuar
+                    </button>
+                </div>
+
+                <!-- Paso 3: Confirmar Cita -->
+                <div class="card hidden" id="paso3">
+                    <h3>3. Confirma tu cita</h3>
+                    <div id="resumenCita"></div>
+                    
+                    <div class="form-group">
+                        <label for="motivoConsulta">Motivo de la consulta:</label>
+                        <textarea id="motivoConsulta" class="form-input" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observaciones">Observaciones (opcional):</label>
+                        <textarea id="observaciones" class="form-input" rows="2"></textarea>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="volverPaso2()">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                    <button class="btn btn-success" onclick="agendarCita()" id="btnAgendar">
+                        <i class="fas fa-calendar-plus"></i> Agendar Cita
+                    </button>
+                </div>
+
+                <!-- Paso 4: Confirmación -->
+                <div class="card hidden" id="paso4">
+                    <h3><i class="fas fa-check-circle text-success"></i> ¡Cita Agendada!</h3>
+                    <div id="confirmacionCita"></div>
+                    <button class="btn btn-primary" onclick="nuevaCita()">
+                        <i class="fas fa-plus"></i> Agendar Nueva Cita
+                    </button>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Cargando...</p>
+                </div>
+
+                <!-- Alertas -->
+                <div id="alertContainer"></div>
             </div>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/shared/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/desktop/citas.js') }}"></script>
 </body>
+</html>
