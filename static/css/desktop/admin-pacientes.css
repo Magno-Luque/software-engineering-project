@@ -168,6 +168,94 @@
 
 
 /* ================
+   ENFERMEDADES EN MODAL DETALLES
+   ================ */
+
+/* Container para enfermedades y médicos */
+.enfermedades-medicos-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+/* Item individual de enfermedad-médico */
+.enfermedad-medico-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+}
+
+/* Información de enfermedad */
+.enfermedad-info {
+    display: flex;
+    align-items: center;
+}
+
+/* Información de médico */
+.medico-info {
+    display: flex;
+    align-items: center;
+}
+
+.medico-asignado {
+    color: #495057;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+/* Estilos específicos para enfermedades en modal */
+.enfermedades-medicos-container .enfermedad-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.8em;
+    color: white;
+    text-align: center;
+    text-transform: uppercase;
+    margin-right: 8px;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+/* Colores específicos para cada enfermedad en modal */
+.enfermedades-medicos-container .enfermedad-tag.diabetes {
+    background-color: #e6ca6e;
+}
+
+.enfermedades-medicos-container .enfermedad-tag.hipertension {
+    background-color: #f39c12;
+}
+
+.enfermedades-medicos-container .enfermedad-tag.asma {
+    background-color: #3498db;
+}
+
+.enfermedades-medicos-container .enfermedad-tag.cardiovascular {
+    background-color: #9b59b6;
+}
+
+/* Para casos donde no hay médicos asignados */
+.enfermedades-medicos-container .no-data {
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 6px;
+}
+
+
+/* ================
    BOTONES DE ACCIÓN
    ================ */
 .action-buttons {
@@ -1155,3 +1243,8 @@ ESTADO
     background-size: 16px;
     animation: spin 1s linear infinite;
 }
+
+
+
+
+

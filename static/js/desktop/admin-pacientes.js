@@ -464,13 +464,58 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mostrarDetallesPaciente(paciente) {
+     
         const modalContent = document.getElementById('pacienteDetallesContent');
-        
-        const enfermedadesHTML = paciente.enfermedades && paciente.enfermedades.length > 0 
-            ? paciente.enfermedades.map(enfermedad => 
-                `<span class="enfermedad-tag ${enfermedad.toLowerCase()}">${enfermedad}</span>`
-            ).join('')
-            : '<span class="no-data">Sin enfermedades registradas</span>';
+
+        // Función para normalizar el nombre de la enfermedad y obtener la clase CSS correcta
+        function normalizarEnfermedad(enfermedad) {
+            if (!enfermedad) return 'sin-especificar';
+            
+            const enfermedadLower = enfermedad.toLowerCase().trim();
+            
+            // Mapear los nombres que pueden venir de la BD a las clases CSS correctas
+            const mapeoEnfermedades = {
+                'diabetes': 'diabetes',
+                'diabétes': 'diabetes',
+                'hipertension': 'hipertension',
+                'hipertensión': 'hipertension',  // Con tilde
+                'asma': 'asma',
+                'cardiovascular': 'cardiovascular',
+                'cardio vascular': 'cardiovascular',
+                'cardio-vascular': 'cardiovascular'
+            };
+            
+            return mapeoEnfermedades[enfermedadLower] || 'sin-especificar';
+        }
+
+        // Generar HTML para médicos asignados con sus enfermedades
+        const enfermedadesMedicosHTML = (() => {
+            if (!paciente.medicos_asignados || paciente.medicos_asignados.length === 0) {
+                return '<div class="no-data">Sin médicos asignados</div>';
+            }
+            
+            return paciente.medicos_asignados.map(medico => {
+                // Normalizar la enfermedad para obtener la clase CSS correcta
+                const enfermedadClass = normalizarEnfermedad(medico.enfermedad);
+                const enfermedadTexto = medico.enfermedad ? medico.enfermedad.toUpperCase() : 'SIN ESPECIFICAR';
+                
+                console.log(`Enfermedad original: "${medico.enfermedad}", Clase CSS: "${enfermedadClass}"`);
+                
+                return `
+                    <div class="enfermedad-medico-item">
+                        <div class="enfermedad-info">
+                            <span class="enfermedad-tag ${enfermedadClass}">${enfermedadTexto}</span>
+                        </div>
+                        <div class="medico-info">
+                            <span class="medico-asignado">
+                                <i class="fas fa-user-md"></i> 
+                                ${medico.nombre || 'Médico no especificado'} - ${medico.especialidad || 'Especialidad no especificada'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        })();
         
         const cuidadoresHTML = paciente.cuidadores && paciente.cuidadores.length > 0 
             ? paciente.cuidadores.map(cuidador => `
@@ -535,16 +580,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="detalle-seccion">
                     <h3><i class="fas fa-heartbeat"></i> Información Médica</h3>
                     <div class="detalle-grid">
-                        <div class="detalle-item">
-                            <label>Médico asignado:</label>
-                            <span>${paciente.medico_asignado ? 
-                                `${paciente.medico_asignado.nombre} - ${paciente.medico_asignado.especialidad}` : 
-                                'No asignado'}</span>
-                        </div>
                         <div class="detalle-item full-width">
-                            <label>Enfermedades:</label>
-                            <div class="enfermedades-container">
-                                ${enfermedadesHTML}
+                            <label>Enfermedades y Médicos Asignados:</label>
+                            <div class="enfermedades-medicos-container">
+                                ${enfermedadesMedicosHTML}
                             </div>
                         </div>
                     </div>
@@ -788,7 +827,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (!validarFormularioEdicion(form)) {
+        // Validación básica del lado del cliente
+        if (!validarFormularioEdicionBasico(form)) {
             return;
         }
         
@@ -822,6 +862,7 @@ document.addEventListener('DOMContentLoaded', function() {
             medicos_asignados: medicosAsignados
         };
         
+        // Agregar datos del cuidador si existen
         const cuidadorNombre = formData.get('cuidador_nombre');
         const cuidadorId = formData.get('cuidador_id');
         const eliminarCuidador = formData.get('eliminar_cuidador');
@@ -836,9 +877,11 @@ document.addEventListener('DOMContentLoaded', function() {
             datosActualizados.cuidador_relacion = formData.get('cuidador_relacion');
         }
         
+        // Deshabilitar botón y mostrar loading
         guardarEdicion.disabled = true;
-        guardarEdicion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        guardarEdicion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando y guardando...';
         
+        // Enviar al servidor
         fetch(`/admin/pacientes/api/${datosActualizados.paciente_id}/actualizar`, {
             method: 'PUT',  
             headers: {
@@ -849,11 +892,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Paciente actualizado exitosamente');
+                alert('✅ Paciente actualizado exitosamente');
                 cerrarModalEditarPaciente();
                 location.reload();
             } else {
-                alert('Error al actualizar: ' + (data.message || 'Error desconocido'));
+                // Mostrar errores del servidor
+                if (data.errores && Array.isArray(data.errores)) {
+                    let mensaje = 'Se encontraron los siguientes errores:\n\n';
+                    data.errores.forEach((error, index) => {
+                        mensaje += `${index + 1}. ${error}\n`;
+                    });
+                    alert('' + mensaje);
+                } else {
+                    alert('Error al actualizar: ' + (data.message || 'Error desconocido'));
+                }
             }
         })
         .catch(error => {
@@ -864,6 +916,120 @@ document.addEventListener('DOMContentLoaded', function() {
             guardarEdicion.disabled = false;
             guardarEdicion.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
         });
+    }
+
+    function validarFormularioEdicionBasico(form) {
+        const nombres = form.querySelector('#editNombres').value.trim();
+        const apellidos = form.querySelector('#editApellidos').value.trim();
+        const dni = form.querySelector('#editDni').value.trim();
+        const fechaNacimiento = form.querySelector('#editFechaNacimiento').value;
+        
+        // Validar nombres
+        if (!nombres) {
+            alert('❌ El campo Nombres es obligatorio');
+            form.querySelector('#editNombres').focus();
+            return false;
+        }
+        
+        if (nombres.length < 2) {
+            alert('❌ Los nombres deben tener al menos 2 caracteres');
+            form.querySelector('#editNombres').focus();
+            return false;
+        }
+        
+        // Validar apellidos
+        if (!apellidos) {
+            alert('❌ El campo Apellidos es obligatorio');
+            form.querySelector('#editApellidos').focus();
+            return false;
+        }
+        
+        if (apellidos.length < 2) {
+            alert('❌ Los apellidos deben tener al menos 2 caracteres');
+            form.querySelector('#editApellidos').focus();
+            return false;
+        }
+        
+        // Validar DNI
+        if (!dni) {
+            alert('❌ El campo DNI es obligatorio');
+            form.querySelector('#editDni').focus();
+            return false;
+        }
+        
+        if (!/^\d{8}$/.test(dni)) {
+            alert('❌ El DNI debe tener exactamente 8 dígitos');
+            form.querySelector('#editDni').focus();
+            return false;
+        }
+        
+        // Validar fecha de nacimiento
+        if (!fechaNacimiento) {
+            alert('❌ La fecha de nacimiento es obligatoria');
+            form.querySelector('#editFechaNacimiento').focus();
+            return false;
+        }
+        
+        const fechaSeleccionada = new Date(fechaNacimiento);
+        const hoy = new Date();
+        if (fechaSeleccionada > hoy) {
+            alert('❌ La fecha de nacimiento no puede ser una fecha futura');
+            form.querySelector('#editFechaNacimiento').focus();
+            return false;
+        }
+        
+        // Validar email si se proporciona
+        const email = form.querySelector('#editEmail').value.trim();
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('❌ Por favor ingrese un email válido');
+                form.querySelector('#editEmail').focus();
+                return false;
+            }
+        }
+        
+        // Validar teléfono si se proporciona
+        const telefono = form.querySelector('#editTelefono').value.trim();
+        if (telefono && !/^\d{7,9}$/.test(telefono)) {
+            alert('❌ El teléfono debe tener entre 7 y 9 dígitos');
+            form.querySelector('#editTelefono').focus();
+            return false;
+        }
+        
+        // Validar datos del cuidador si existen
+        const cuidadorNombre = form.querySelector('#cuidador_nombre');
+        if (cuidadorNombre && cuidadorNombre.value.trim()) {
+            const cuidadorDni = form.querySelector('#cuidador_dni').value.trim();
+            const cuidadorTelefono = form.querySelector('#cuidador_telefono').value.trim();
+            const cuidadorRelacion = form.querySelector('#cuidador_relacion').value;
+            
+            if (!cuidadorDni || !/^\d{8}$/.test(cuidadorDni)) {
+                alert('❌ El DNI del cuidador debe tener exactamente 8 dígitos');
+                form.querySelector('#cuidador_dni').focus();
+                return false;
+            }
+            
+            if (cuidadorDni === dni) {
+                alert('❌ El DNI del cuidador no puede ser igual al del paciente');
+                form.querySelector('#cuidador_dni').focus();
+                return false;
+            }
+            
+            if (!cuidadorTelefono || !/^\d{7,9}$/.test(cuidadorTelefono)) {
+                alert('❌ El teléfono del cuidador debe tener entre 7 y 9 dígitos');
+                form.querySelector('#cuidador_telefono').focus();
+                return false;
+            }
+            
+            if (!cuidadorRelacion) {
+                alert('❌ La relación del cuidador es obligatoria');
+                form.querySelector('#cuidador_relacion').focus();
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     function cerrarModalEditarPaciente() {
@@ -1035,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <select name="medico_medicina_interna" class="form-control">
                         <option value="">Seleccionar médico especialista en Medicina Interna...</option>
                         ${medicosMedicinaInterna.map(medico => 
-                            `<option value="${medico.id}">Dr. ${medico.nombre_formal} - MEDICINA INTERNA</option>`
+                            `<option value="${medico.id}">${medico.nombre_formal} - MEDICINA INTERNA</option>`
                         ).join('')}
                     </select>
                 </div>
@@ -1060,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select name="medico_${enfermedad}" class="form-control" data-enfermedad="${enfermedad}">
                             <option value="">Seleccionar médico para ${enfermedad}...</option>
                             ${medicosParaEspecialidad.map(medico => 
-                                `<option value="${medico.id}">Dr. ${medico.nombre_formal} - ${especialidadRequerida}</option>`
+                                `<option value="${medico.id}">${medico.nombre_formal} - ${especialidadRequerida}</option>`
                             ).join('')}
                         </select>
                         ${medicosParaEspecialidad.length === 0 ? 
@@ -1193,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function validarFormularioNuevoPaciente() {
+    function validarFormularioNuevoPaciente() { 
         const nombres = document.getElementById('nuevoNombres').value.trim();
         const apellidos = document.getElementById('nuevoApellidos').value.trim();
         const dni = document.getElementById('nuevoDni').value.trim();
@@ -1201,48 +1367,84 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById('nuevoEmail').value.trim();
         
         if (!nombres) {
-            alert('El campo Nombres es obligatorio');
+            alert('❌ El campo Nombres es obligatorio');
+            document.getElementById('nuevoNombres').focus();
+            return false;
+        }
+        
+        if (nombres.length < 2) {
+            alert('❌ Los nombres deben tener al menos 2 caracteres');
             document.getElementById('nuevoNombres').focus();
             return false;
         }
         
         if (!apellidos) {
-            alert('El campo Apellidos es obligatorio');
+            alert('❌ El campo Apellidos es obligatorio');
             document.getElementById('nuevoApellidos').focus();
             return false;
         }
         
-        if (!dni || dni.length !== 8) {
-            alert('El DNI debe tener exactamente 8 dígitos');
+        if (apellidos.length < 2) {
+            alert('❌ Los apellidos deben tener al menos 2 caracteres');
+            document.getElementById('nuevoApellidos').focus();
+            return false;
+        }
+        
+        if (!dni || !/^\d{8}$/.test(dni)) {
+            alert('❌ El DNI debe tener exactamente 8 dígitos');
             document.getElementById('nuevoDni').focus();
             return false;
         }
         
         if (!fechaNacimiento) {
-            alert('La fecha de nacimiento es obligatoria');
+            alert('❌ La fecha de nacimiento es obligatoria');
             document.getElementById('nuevoFechaNacimiento').focus();
-            return false;
-        }
-        
-        if (!email) {
-            alert('El campo Email es obligatorio');
-            document.getElementById('nuevoEmail').focus();
-            return false;
-        }
-        
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Por favor ingrese un email válido');
-            document.getElementById('nuevoEmail').focus();
             return false;
         }
         
         const fechaSeleccionada = new Date(fechaNacimiento);
         const hoy = new Date();
         if (fechaSeleccionada > hoy) {
-            alert('La fecha de nacimiento no puede ser una fecha futura');
+            alert('❌ La fecha de nacimiento no puede ser una fecha futura');
             document.getElementById('nuevoFechaNacimiento').focus();
             return false;
+        }
+        
+        if (!email) {
+            alert('❌ El campo Email es obligatorio');
+            document.getElementById('nuevoEmail').focus();
+            return false;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('❌ Por favor ingrese un email válido');
+            document.getElementById('nuevoEmail').focus();
+            return false;
+        }
+        
+        const telefono = document.getElementById('nuevoTelefono').value.trim();
+        if (telefono && !/^\d{7,9}$/.test(telefono)) {
+            alert('❌ El teléfono debe tener entre 7 y 9 dígitos');
+            document.getElementById('nuevoTelefono').focus();
+            return false;
+        }
+        
+        // Validar que haya enfermedades seleccionadas
+        const enfermedadesSeleccionadas = document.querySelectorAll('input[name="enfermedades"]:checked');
+        if (enfermedadesSeleccionadas.length === 0) {
+            alert('❌ Debe seleccionar al menos una enfermedad');
+            return false;
+        }
+        
+        // Validar que haya médicos asignados
+        const selectoresMedicos = document.querySelectorAll('select[name^="medico_"]');
+        for (let select of selectoresMedicos) {
+            if (!select.value) {
+                alert('❌ Debe asignar un médico para cada enfermedad seleccionada');
+                select.focus();
+                return false;
+            }
         }
         
         return true;
@@ -1400,7 +1602,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <option value="">Seleccionar médico...</option>
                         ${medicosEspecialidad.map(medico => 
                             `<option value="${medico.id}" ${medico.id == (medicoActual ? medicoActual.id : '') ? 'selected' : ''}>
-                                Dr. ${medico.nombre_formal} - ${especialidad}
+                                ${medico.nombre_formal} - ${especialidad}
                             </option>`
                         ).join('')}
                     </select>

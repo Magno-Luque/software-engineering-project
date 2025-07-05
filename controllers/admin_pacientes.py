@@ -2,6 +2,7 @@
 
 from models.actores import Paciente, Profesional, Cuidador, PacienteEnfermedadMedico, Enfermedad
 from datetime import datetime, date
+import json
 import re
 
 def obtener_pacientes_con_filtros(estado=None, medico_id=None, fecha_desde=None, fecha_hasta=None, busqueda=None, page=1, per_page=10):
@@ -243,6 +244,22 @@ def obtener_paciente_por_id(paciente_id):
         # Calcular edad
         edad = Paciente.calcular_edad(paciente['fecha_nacimiento']) if paciente.get('fecha_nacimiento') else None
         
+        # Parsear enfermedades si es un string JSON
+        enfermedades_raw = paciente.get('enfermedades', [])
+        enfermedades = []
+        
+        if enfermedades_raw:
+            if isinstance(enfermedades_raw, str):
+                try:
+                    enfermedades = json.loads(enfermedades_raw)
+                except json.JSONDecodeError:
+                    print(f"Error al parsear enfermedades JSON: {enfermedades_raw}")
+                    enfermedades = []
+            elif isinstance(enfermedades_raw, list):
+                enfermedades = enfermedades_raw
+            else:
+                enfermedades = []
+        
         return {
             'id': paciente['id'],
             'dni': paciente['dni'],
@@ -254,7 +271,7 @@ def obtener_paciente_por_id(paciente_id):
             'email': paciente.get('email', ''),
             'telefono': paciente.get('telefono', ''),
             'direccion': paciente.get('direccion', ''),
-            'enfermedades': paciente.get('enfermedades', []),
+            'enfermedades': enfermedades,  
             'estado': paciente['estado'],
             'fecha_registro': paciente['fecha_registro'].strftime('%d/%m/%Y %H:%M') if hasattr(paciente['fecha_registro'], 'strftime') else str(paciente['fecha_registro']),
             'medicos_asignados': medicos_asignados,
@@ -272,68 +289,160 @@ def obtener_paciente_por_id(paciente_id):
         print(f"Error en obtener_paciente_por_id: {str(e)}")
         return None
 
-def actualizar_paciente(paciente_id, datos, medico_id=None):
+def actualizar_paciente(paciente_id, datos):
     """
-    Actualiza los datos de un paciente existente
+    Actualiza los datos de un paciente existente con validaciones
     """
     try:
         from app import mysql
         cursor = mysql.connection.cursor()
         
-        # Verificar que el paciente existe
-        paciente = Paciente.obtener_por_id(mysql, paciente_id)
-        if not paciente:
+        # 1. Verificar que el paciente existe
+        cursor.execute("SELECT * FROM pacientes WHERE id = %s", (paciente_id,))
+        paciente_actual = cursor.fetchone()
+        
+        if not paciente_actual:
+            cursor.close()
             return {'success': False, 'message': 'Paciente no encontrado'}
         
-        # Preparar datos para actualización
+        # 2. Validaciones básicas
+        errores = []
+        
+        # Validar DNI duplicado
+        dni = datos.get('dni', '').strip()
+        if dni and dni != paciente_actual['dni']:
+            cursor.execute("SELECT id FROM pacientes WHERE dni = %s AND id != %s", (dni, paciente_id))
+            if cursor.fetchone():
+                errores.append('Este DNI ya está registrado para otro paciente')
+        
+        # Validar email duplicado
+        email = datos.get('email', '').strip()
+        if email:
+            cursor.execute("SELECT id FROM pacientes WHERE email = %s AND id != %s", (email, paciente_id))
+            if cursor.fetchone():
+                errores.append('Este email ya está registrado para otro paciente')
+        
+        # Validar teléfono duplicado
+        telefono = datos.get('telefono', '').strip()
+        if telefono:
+            cursor.execute("SELECT id FROM pacientes WHERE telefono = %s AND id != %s", (telefono, paciente_id))
+            if cursor.fetchone():
+                errores.append('Este teléfono ya está registrado para otro paciente')
+        
+        # Validar DNI del cuidador si existe
+        cuidador_dni = datos.get('cuidador_dni', '').strip()
+        if cuidador_dni:
+            # No puede ser igual al DNI del paciente
+            if cuidador_dni == dni:
+                errores.append('El DNI del cuidador no puede ser igual al del paciente')
+            else:
+                # No puede estar duplicado
+                cuidador_id = datos.get('cuidador_id')
+                if cuidador_id and cuidador_id != 'nuevo':
+                    cursor.execute("SELECT id FROM cuidadores WHERE dni = %s AND id != %s", (cuidador_dni, cuidador_id))
+                else:
+                    cursor.execute("SELECT id FROM cuidadores WHERE dni = %s", (cuidador_dni,))
+                
+                if cursor.fetchone():
+                    errores.append('Este DNI del cuidador ya está registrado')
+        
+        # Si hay errores, retornar
+        if errores:
+            cursor.close()
+            return {
+                'success': False, 
+                'message': 'Errores de validación encontrados',
+                'errores': errores
+            }
+        
+        # 3. Actualizar datos del paciente
         query = """
             UPDATE pacientes 
             SET nombres = %s, apellidos = %s, email = %s, telefono = %s, direccion = %s
         """
         params = [
-            datos.get('nombres', paciente['nombres']),
-            datos.get('apellidos', paciente['apellidos']),
-            datos.get('email', paciente.get('email')),
-            datos.get('telefono', paciente.get('telefono')),
-            datos.get('direccion', paciente.get('direccion'))
+            datos.get('nombres', paciente_actual['nombres']).strip(),
+            datos.get('apellidos', paciente_actual['apellidos']).strip(),
+            email or None,
+            telefono or None,
+            datos.get('direccion', paciente_actual.get('direccion', '')).strip() or None
         ]
         
-        # Actualizar fecha de nacimiento si se proporciona
-        if 'fecha_nacimiento' in datos:
+        # Actualizar fecha de nacimiento si viene
+        if 'fecha_nacimiento' in datos and datos['fecha_nacimiento']:
             query += ", fecha_nacimiento = %s"
             fecha_nacimiento = datetime.strptime(datos['fecha_nacimiento'], '%Y-%m-%d').date()
             params.append(fecha_nacimiento)
+        
+        # Actualizar DNI si cambió
+        if dni and dni != paciente_actual['dni']:
+            query += ", dni = %s"
+            params.append(dni)
         
         query += " WHERE id = %s"
         params.append(paciente_id)
         
         cursor.execute(query, params)
         
-        # Actualizar enfermedades y relaciones médicas si se proporcionan
-        if 'enfermedades' in datos and medico_id:
-            enfermedades = datos['enfermedades']
-            if isinstance(enfermedades, str):
-                enfermedades = [enfermedades]
-            
-            # Eliminar asignaciones existentes para este paciente y médico
-            cursor.execute("""
-                DELETE FROM paciente_enfermedad_medico 
-                WHERE paciente_id = %s AND medico_id = %s
-            """, (paciente_id, medico_id))
+        # 4. Actualizar asignaciones médicas si vienen
+        if 'enfermedades' in datos and 'medicos_asignados' in datos:
+            # Eliminar asignaciones existentes
+            cursor.execute("DELETE FROM paciente_enfermedad_medico WHERE paciente_id = %s", (paciente_id,))
             
             # Insertar nuevas asignaciones
-            for enfermedad_id in enfermedades:
-                cursor.execute("""
-                    INSERT INTO paciente_enfermedad_medico 
-                    (paciente_id, enfermedad_id, medico_id, estado, observaciones)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (paciente_id, enfermedad_id, medico_id, 'ACTIVO', datos.get('observaciones')))
+            enfermedad_nombre_a_id = {"diabetes": 1, "hipertension": 2, "asma": 3, "cardiovascular": 4}
+            enfermedades = datos['enfermedades']
+            medicos_asignados = datos['medicos_asignados']
             
-            # Actualizar campo enfermedades en la tabla pacientes
+            if "medicina_interna" in medicos_asignados:
+                # Medicina interna para todas
+                medico_medicina_interna_id = medicos_asignados["medicina_interna"]
+                for enfermedad_nombre in enfermedades:
+                    enfermedad_id = enfermedad_nombre_a_id.get(enfermedad_nombre)
+                    if enfermedad_id:
+                        cursor.execute("""
+                            INSERT INTO paciente_enfermedad_medico (paciente_id, enfermedad_id, medico_id, estado)
+                            VALUES (%s, %s, %s, %s)
+                        """, (paciente_id, enfermedad_id, medico_medicina_interna_id, 'ACTIVO'))
+            else:
+                # Médicos específicos por enfermedad
+                for enfermedad_nombre in enfermedades:
+                    enfermedad_id = enfermedad_nombre_a_id.get(enfermedad_nombre)
+                    medico_id = medicos_asignados.get(enfermedad_nombre)
+                    if enfermedad_id and medico_id:
+                        cursor.execute("""
+                            INSERT INTO paciente_enfermedad_medico (paciente_id, enfermedad_id, medico_id, estado)
+                            VALUES (%s, %s, %s, %s)
+                        """, (paciente_id, enfermedad_id, medico_id, 'ACTIVO'))
+            
+            # Actualizar campo enfermedades
             import json
-            cursor.execute("""
-                UPDATE pacientes SET enfermedades = %s WHERE id = %s
-            """, (json.dumps(enfermedades), paciente_id))
+            cursor.execute("UPDATE pacientes SET enfermedades = %s WHERE id = %s", 
+                         (json.dumps(enfermedades), paciente_id))
+        
+        # 5. Manejar cuidador
+        if datos.get('eliminar_cuidador') == 'true':
+            cursor.execute("DELETE FROM cuidadores WHERE paciente_id = %s", (paciente_id,))
+        elif 'cuidador_nombre' in datos and datos['cuidador_nombre'].strip():
+            cuidador_id = datos.get('cuidador_id')
+            nombre = datos.get('cuidador_nombre').strip()
+            dni_cuidador = datos.get('cuidador_dni').strip()
+            telefono_cuidador = datos.get('cuidador_telefono').strip()
+            relacion = datos.get('cuidador_relacion')
+            
+            if cuidador_id == 'nuevo':
+                # Crear nuevo cuidador
+                cursor.execute("""
+                    INSERT INTO cuidadores (paciente_id, nombre_completo, dni, telefono, relacion_paciente, estado)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (paciente_id, nombre, dni_cuidador, telefono_cuidador, relacion, 'ACTIVO'))
+            else:
+                # Actualizar cuidador existente
+                cursor.execute("""
+                    UPDATE cuidadores 
+                    SET nombre_completo = %s, dni = %s, telefono = %s, relacion_paciente = %s
+                    WHERE id = %s AND paciente_id = %s
+                """, (nombre, dni_cuidador, telefono_cuidador, relacion, cuidador_id, paciente_id))
         
         mysql.connection.commit()
         cursor.close()
@@ -342,8 +451,10 @@ def actualizar_paciente(paciente_id, datos, medico_id=None):
         
     except Exception as e:
         mysql.connection.rollback()
+        if 'cursor' in locals():
+            cursor.close()
         print(f"Error en actualizar_paciente: {str(e)}")
-        return {'success': False, 'message': f'Error al actualizar paciente: {str(e)}'}
+        return {'success': False, 'message': f'Error interno del servidor'}
 
 def cambiar_estado_paciente(paciente_id):
     """

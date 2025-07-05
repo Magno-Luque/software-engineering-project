@@ -744,9 +744,65 @@ def psicologo_dashboard():
 # ======================
 # Rutas para Paciente
 # ======================
+from controllers.paciente import (
+    obtener_dashboard_paciente,
+    obtener_citas_paciente,
+    obtener_proximas_citas_paciente
+)
+
 @app.route('/paciente/dashboard')
+@login_required
+@role_required('paciente')
 def paciente_dashboard():
-    return render_template('paciente/dashboard.html')
+    """Dashboard principal del paciente"""
+    paciente_id = session.get('user_id')
+    
+    # Obtener datos para el dashboard
+    dashboard_data = obtener_dashboard_paciente(paciente_id)
+    
+    return render_template('paciente/dashboard.html', 
+                         dashboard_data=dashboard_data)
+
+# APIs para el paciente
+@app.route('/paciente/api/citas')
+@login_required
+@role_required('paciente')
+def paciente_api_citas():
+    """API para obtener citas del paciente"""
+    paciente_id = session.get('user_id')
+    estado = request.args.get('estado', 'todas')
+    limite = int(request.args.get('limite', 10))
+    
+    try:
+        citas = obtener_citas_paciente(paciente_id, estado, limite)
+        return jsonify({
+            'success': True,
+            'citas': citas
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener citas: {str(e)}'
+        }), 500
+
+@app.route('/paciente/api/proximas-citas')
+@login_required
+@role_required('paciente')
+def paciente_api_proximas_citas():
+    """API para obtener próximas citas del paciente"""
+    paciente_id = session.get('user_id')
+    
+    try:
+        citas = obtener_proximas_citas_paciente(paciente_id)
+        return jsonify({
+            'success': True,
+            'citas': citas
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error al obtener próximas citas: {str(e)}'
+        }), 500
 ########################
 from controllers.registro_triaje import biometrico_bp
 app.register_blueprint(biometrico_bp)

@@ -12,16 +12,445 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/dashboard-desktop.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/desktop/paciente.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .citas-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .citas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .citas-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .citas-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .citas-list {
+            padding: 20px;
+        }
+
+        .cita-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .cita-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .cita-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .cita-fecha {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .cita-hora {
+            color: #6b7280;
+        }
+
+        .cita-estado {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .estado-agendada { background: #dbeafe; color: #1e40af; }
+        .estado-atendida { background: #dcfce7; color: #166534; }
+        .estado-cancelada { background: #fee2e2; color: #dc2626; }
+
+        .cita-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+        }
+
+        .info-item i {
+            width: 16px;
+            color: #9ca3af;
+        }
+
+        .enlace-virtual {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 12px;
+            font-size: 0.875rem;
+        }
+
+        .enlace-virtual:hover {
+            background: #059669;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .filtro-btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filtro-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+    </style>
 </head>
 <body>
     <div class="desktop-layout">
         {% include 'shared/sidebar_paciente.html' %}
-
+        
         <div class="main-content">
+            <div class="citas-container">
+                <div class="citas-header">
+                    <h1>Mis Citas Médicas</h1>
+                </div>
 
-            <div class="dashboard-container">
-                <h1>Inicio</h1>
+                <!-- Estadísticas -->
+                <div class="citas-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-citas">-</div>
+                        <div class="stat-label">Total de Citas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="citas-pendientes">-</div>
+                        <div class="stat-label">Citas Pendientes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="citas-hoy">-</div>
+                        <div class="stat-label">Citas Hoy</div>
+                    </div>
+                </div>
+
+                <!-- Próxima Cita -->
+                <div class="citas-section" id="proxima-cita-section" style="display: none;">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-clock"></i> Próxima Cita
+                        </h2>
+                    </div>
+                    <div class="citas-list" id="proxima-cita-container">
+                    </div>
+                </div>
+
+                <!-- Citas de Hoy -->
+                <div class="citas-section" id="citas-hoy-section" style="display: none;">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-calendar-day"></i> Citas de Hoy
+                        </h2>
+                    </div>
+                    <div class="citas-list" id="citas-hoy-container">
+                    </div>
+                </div>
+
+                <!-- Todas las Citas -->
+                <div class="citas-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-calendar-alt"></i> Todas mis Citas
+                        </h2>
+                    </div>
+                    
+                    <div class="filtros">
+                        <button class="filtro-btn active" data-estado="todas">Todas</button>
+                        <button class="filtro-btn" data-estado="agendadas">Agendadas</button>
+                        <button class="filtro-btn" data-estado="atendidas">Atendidas</button>
+                        <button class="filtro-btn" data-estado="canceladas">Canceladas</button>
+                    </div>
+                    
+                    <div class="citas-list" id="todas-citas-container">
+                        <div class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Cargando citas...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</body>  
+
+    <script>
+        // Variables globales
+        let dashboardData = null;
+        let estadoActual = 'todas';
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarDashboard();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Filtros de estado
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const estado = this.dataset.estado;
+                    cambiarFiltro(estado);
+                });
+            });
+        }
+
+        function cambiarFiltro(estado) {
+            estadoActual = estado;
+            
+            // Actualizar botones
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-estado="${estado}"]`).classList.add('active');
+            
+            // Cargar citas filtradas
+            cargarCitas(estado);
+        }
+
+        async function cargarDashboard() {
+            try {
+                // Simular datos del dashboard (normalmente vendría del backend)
+                if (typeof dashboardDataFromTemplate !== 'undefined') {
+                    dashboardData = dashboardDataFromTemplate;
+                } else {
+                    // Datos de ejemplo si no hay datos del template
+                    dashboardData = {
+                        estadisticas: { total_citas: 0, citas_pendientes: 0, citas_hoy: 0 },
+                        proxima_cita: null,
+                        citas_hoy: [],
+                        proximas_citas: []
+                    };
+                }
+
+                mostrarEstadisticas();
+                mostrarProximaCita();
+                mostrarCitasHoy();
+                cargarCitas('todas');
+                
+            } catch (error) {
+                console.error('Error al cargar dashboard:', error);
+                mostrarError('Error al cargar los datos del dashboard');
+            }
+        }
+
+        function mostrarEstadisticas() {
+            const stats = dashboardData.estadisticas || {};
+            document.getElementById('total-citas').textContent = stats.total_citas || 0;
+            document.getElementById('citas-pendientes').textContent = stats.citas_pendientes || 0;
+            document.getElementById('citas-hoy').textContent = stats.citas_hoy || 0;
+        }
+
+        function mostrarProximaCita() {
+            const proximaCita = dashboardData.proxima_cita;
+            const section = document.getElementById('proxima-cita-section');
+            const container = document.getElementById('proxima-cita-container');
+
+            if (proximaCita) {
+                section.style.display = 'block';
+                container.innerHTML = crearTarjetaCita(proximaCita, true);
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function mostrarCitasHoy() {
+            const citasHoy = dashboardData.citas_hoy || [];
+            const section = document.getElementById('citas-hoy-section');
+            const container = document.getElementById('citas-hoy-container');
+
+            if (citasHoy.length > 0) {
+                section.style.display = 'block';
+                container.innerHTML = citasHoy.map(cita => crearTarjetaCita(cita)).join('');
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        async function cargarCitas(estado = 'todas') {
+            try {
+                const response = await fetch(`/paciente/api/citas?estado=${estado}&limite=20`);
+                const data = await response.json();
+
+                const container = document.getElementById('todas-citas-container');
+
+                if (data.success && data.citas.length > 0) {
+                    container.innerHTML = data.citas.map(cita => crearTarjetaCita(cita)).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No hay citas ${estado === 'todas' ? '' : estado} para mostrar</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error al cargar citas:', error);
+                document.getElementById('todas-citas-container').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar las citas</p>
+                    </div>
+                `;
+            }
+        }
+
+        function crearTarjetaCita(cita, esProxima = false) {
+            const estadoClass = `estado-${cita.estado.toLowerCase()}`;
+            const iconoTipo = cita.tipo === 'VIRTUAL' ? 'fas fa-video' : 'fas fa-hospital';
+            
+            return `
+                <div class="cita-card ${esProxima ? 'proxima-cita' : ''}">
+                    <div class="cita-header">
+                        <div>
+                            <div class="cita-fecha">${cita.fecha_cita} - ${cita.dia_semana}</div>
+                            <div class="cita-hora">${cita.hora_inicio} - ${cita.hora_fin}</div>
+                        </div>
+                        <span class="cita-estado ${estadoClass}">${cita.estado_texto}</span>
+                    </div>
+                    
+                    <div class="cita-info">
+                        <div class="info-item">
+                            <i class="fas fa-user-md"></i>
+                            <span>${cita.medico_nombre}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-stethoscope"></i>
+                            <span>${cita.especialidad}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="${iconoTipo}"></i>
+                            <span>${cita.tipo_texto}</span>
+                        </div>
+                        
+                        ${cita.enfermedad ? `
+                            <div class="info-item">
+                                <i class="fas fa-notes-medical"></i>
+                                <span>${cita.enfermedad}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${cita.consultorio ? `
+                            <div class="info-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${cita.consultorio}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${cita.tiempo_hasta_cita ? `
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <span>${cita.tiempo_hasta_cita}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${cita.motivo_consulta ? `
+                        <div style="margin-top: 12px;">
+                            <strong>Motivo:</strong> ${cita.motivo_consulta}
+                        </div>
+                    ` : ''}
+                    
+                    ${cita.enlace_virtual && cita.estado === 'AGENDADA' ? `
+                        <a href="${cita.enlace_virtual}" target="_blank" class="enlace-virtual">
+                            <i class="fas fa-video"></i> Unirse a la consulta virtual
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function mostrarError(mensaje) {
+            console.error(mensaje);
+            // Aquí podrías mostrar un toast o notificación
+        }
+
+     
+    </script>
+</body>
+</html>

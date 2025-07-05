@@ -4,6 +4,7 @@
         <img src="{{ url_for('static', filename='images/Logo-encabezado-barra-lateral.png') }}" alt="MiControl Logo" class="sidebar-logo">
         <span class="menu-toggle-icon"><i class="fas fa-bars"></i></span>
     </div>
+    
     <nav class="sidebar-nav">
         <ul>
             <li class="{{ 'active' if request.path == '/medico/dashboard' else '' }}">
@@ -11,26 +12,13 @@
                     <i class="fas fa-home"></i> Inicio
                 </a>
             </li>
+            
             <li class="{{ 'active' if request.path == '/medico/mis_pacientes' else '' }}">
                 <a href="{{ url_for('medico_mis_pacientes') }}">
                     <i class="fas fa-user-injured"></i> Mis Pacientes
                 </a>
             </li>
-            <li class="{{ 'active' if request.path == '/medico/alertas_criticas' else '' }}">
-                <a href="{{ url_for('medico_alertas_criticas') }}">
-                    <i class="fas fa-exclamation-triangle"></i> Alertas Críticas
-                </a>
-            </li>
-            <li class="{{ 'active' if request.path == '/medico/graficos_pacientes' else '' }}">
-                <a href="{{ url_for('medico_graficos_pacientes') }}">
-                    <i class="fas fa-chart-line"></i> Gráficos Pacientes
-                </a>
-            </li>
-            <li class="{{ 'active' if request.path == '/medico/consultas_virtuales' else '' }}">
-                <a href="{{ url_for('medico_consultas_virtuales') }}">
-                    <i class="fas fa-video"></i> Consultas Virtuales
-                </a>
-            </li>
+            
             <li class="{{ 'active' if request.path == '/medico/mi_calendario' else '' }}">
                 <a href="{{ url_for('medico_mi_calendario') }}">
                     <i class="fas fa-calendar-alt"></i> Mi Calendario
@@ -38,12 +26,13 @@
             </li>
         </ul>
     </nav>
+    
     <div class="sidebar-footer">
         <div class="user-profile">
             <i class="fas fa-user-md"></i>
             <div>
+                <span class="user-name">{{ session.get('user_name', 'Dr. Médico') }}</span>
                 <span class="user-role">Médico</span>
-                <span class="user-clinic">Cardiólogo</span>
             </div>
         </div>
         <a href="{{ url_for('logout') }}" class="logout-link">

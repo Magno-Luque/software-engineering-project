@@ -532,3 +532,552 @@ class PacienteEnfermedadMedico:
         except Exception as e:
             print(f"Error al obtener pacientes por médico: {str(e)}")
             return []
+
+
+class Cita:
+    """Modelo para la tabla citas usando Flask-MySQLdb"""
+    
+    def __init__(self, mysql):
+        self.mysql = mysql
+    
+    @classmethod
+    def obtener_citas_por_medico_fecha(cls, mysql, medico_id, fecha=None, estado='todas'):
+        """Obtiene las citas de un médico específico en una fecha"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       p.nombres as paciente_nombres, p.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.medico_id = %s
+            """
+            params = [medico_id]
+            
+            # Filtro por fecha
+            if fecha:
+                query += " AND c.fecha_cita = %s"
+                params.append(fecha)
+            
+            # Filtro por estado
+            if estado and estado != 'todas':
+                query += " AND c.estado = %s"
+                params.append(estado.upper())
+            
+            query += " ORDER BY c.fecha_cita, c.hora_inicio"
+            
+            cursor.execute(query, params)
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas por médico y fecha: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_hoy(cls, mysql, medico_id):
+        """Obtiene las citas de hoy de un médico"""
+        try:
+            from datetime import date
+            
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       p.nombres as paciente_nombres, p.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.medico_id = %s 
+                AND c.fecha_cita = CURDATE()
+                AND c.estado = 'AGENDADA'
+                ORDER BY c.hora_inicio
+            """
+            
+            cursor.execute(query, (medico_id,))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas de hoy: {str(e)}")
+            return []
+    
+    @classmethod
+    def contar_citas_hoy(cls, mysql, medico_id):
+        """Cuenta las citas de hoy de un médico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT COUNT(*) as total
+                FROM citas
+                WHERE medico_id = %s 
+                AND fecha_cita = CURDATE()
+                AND estado = 'AGENDADA'
+            """
+            
+            cursor.execute(query, (medico_id,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            
+            return resultado['total'] if resultado else 0
+            
+        except Exception as e:
+            print(f"Error al contar citas de hoy: {str(e)}")
+            return 0
+    
+    @classmethod
+    def obtener_por_id(cls, mysql, cita_id):
+        """Obtiene una cita por su ID"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       p.nombres as paciente_nombres, p.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre,
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                LEFT JOIN profesionales prof ON c.medico_id = prof.id
+                WHERE c.id = %s
+            """
+            
+            cursor.execute(query, (cita_id,))
+            cita = cursor.fetchone()
+            cursor.close()
+            
+            return cita
+            
+        except Exception as e:
+            print(f"Error al obtener cita por ID: {str(e)}")
+            return None
+    
+    @classmethod
+    def actualizar_estado(cls, mysql, cita_id, nuevo_estado, observaciones=None):
+        """Actualiza el estado de una cita"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                UPDATE citas 
+                SET estado = %s, observaciones = %s, fecha_actualizacion = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """
+            
+            cursor.execute(query, (nuevo_estado, observaciones, cita_id))
+            mysql.connection.commit()
+            cursor.close()
+            
+            return True
+            
+        except Exception as e:
+            mysql.connection.rollback()
+            print(f"Error al actualizar estado de cita: {str(e)}")
+            return False
+    
+    @classmethod
+    def obtener_proximas_citas(cls, mysql, medico_id, dias=7):
+        """Obtiene las próximas citas del médico en los próximos X días"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       p.nombres as paciente_nombres, p.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN pacientes p ON c.paciente_id = p.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.medico_id = %s 
+                AND c.fecha_cita BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL %s DAY)
+                AND c.estado = 'AGENDADA'
+                ORDER BY c.fecha_cita, c.hora_inicio
+                LIMIT 10
+            """
+            
+            cursor.execute(query, (medico_id, dias))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener próximas citas: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_por_paciente(cls, mysql, paciente_id, estado='todas', limite=10):
+        """Obtiene las citas de un paciente específico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN profesionales prof ON c.medico_id = prof.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.paciente_id = %s
+            """
+            params = [paciente_id]
+            
+            # Filtro por estado
+            if estado and estado != 'todas':
+                query += " AND c.estado = %s"
+                params.append(estado.upper())
+            
+            query += " ORDER BY c.fecha_cita DESC, c.hora_inicio DESC LIMIT %s"
+            params.append(limite)
+            
+            cursor.execute(query, params)
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas por paciente: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_proximas_citas_paciente(cls, mysql, paciente_id, dias=30, limit=10):
+        """Obtiene las próximas citas de un paciente"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN profesionales prof ON c.medico_id = prof.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.paciente_id = %s 
+                AND c.fecha_cita >= CURDATE()
+                AND c.fecha_cita <= DATE_ADD(CURDATE(), INTERVAL %s DAY)
+                AND c.estado = 'AGENDADA'
+                ORDER BY c.fecha_cita ASC, c.hora_inicio ASC
+                LIMIT %s
+            """
+            
+            cursor.execute(query, (paciente_id, dias, limit))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener próximas citas del paciente: {str(e)}")
+            return []
+    
+    @classmethod
+    def obtener_citas_hoy_paciente(cls, mysql, paciente_id):
+        """Obtiene las citas de hoy de un paciente"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN profesionales prof ON c.medico_id = prof.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.paciente_id = %s 
+                AND c.fecha_cita = CURDATE()
+                AND c.estado = 'AGENDADA'
+                ORDER BY c.hora_inicio ASC
+            """
+            
+            cursor.execute(query, (paciente_id,))
+            citas = cursor.fetchall()
+            cursor.close()
+            
+            return citas
+            
+        except Exception as e:
+            print(f"Error al obtener citas de hoy del paciente: {str(e)}")
+            return []
+    
+    @classmethod
+    def contar_citas_paciente(cls, mysql, paciente_id):
+        """Cuenta el total de citas de un paciente"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT COUNT(*) as total
+                FROM citas
+                WHERE paciente_id = %s
+            """
+            
+            cursor.execute(query, (paciente_id,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            
+            return resultado['total'] if resultado else 0
+            
+        except Exception as e:
+            print(f"Error al contar citas del paciente: {str(e)}")
+            return 0
+    
+    @classmethod
+    def contar_citas_pendientes_paciente(cls, mysql, paciente_id):
+        """Cuenta las citas pendientes de un paciente"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT COUNT(*) as total
+                FROM citas
+                WHERE paciente_id = %s 
+                AND estado = 'AGENDADA'
+                AND fecha_cita >= CURDATE()
+            """
+            
+            cursor.execute(query, (paciente_id,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            
+            return resultado['total'] if resultado else 0
+            
+        except Exception as e:
+            print(f"Error al contar citas pendientes del paciente: {str(e)}")
+            return 0
+    
+    @classmethod
+    def obtener_ultima_cita_atendida(cls, mysql, paciente_id):
+        """Obtiene la última cita atendida del paciente"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT c.*, 
+                       prof.nombres as medico_nombres, prof.apellidos as medico_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM citas c
+                JOIN profesionales prof ON c.medico_id = prof.id
+                LEFT JOIN enfermedades e ON c.enfermedad_id = e.id
+                WHERE c.paciente_id = %s 
+                AND c.estado = 'ATENDIDA'
+                ORDER BY c.fecha_cita DESC, c.hora_inicio DESC
+                LIMIT 1
+            """
+            
+            cursor.execute(query, (paciente_id,))
+            cita = cursor.fetchone()
+            cursor.close()
+            
+            return cita
+            
+        except Exception as e:
+            print(f"Error al obtener última cita atendida: {str(e)}")
+            return None
+
+class AlertaCritica:
+    """Modelo para la tabla alertas_criticas usando Flask-MySQLdb"""
+    
+    def __init__(self, mysql):
+        self.mysql = mysql
+    
+    @classmethod
+    def obtener_alertas_pendientes(cls, mysql, medico_id=None):
+        """Obtiene alertas críticas pendientes"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT ac.*, 
+                       p.nombres as paciente_nombres, p.apellidos as paciente_apellidos,
+                       e.nombre as enfermedad_nombre
+                FROM alertas_criticas ac
+                JOIN pacientes p ON ac.paciente_id = p.id
+                LEFT JOIN enfermedades e ON ac.enfermedad_relacionada_id = e.id
+            """
+            params = []
+            
+            if medico_id:
+                query += """
+                    WHERE ac.paciente_id IN (
+                        SELECT DISTINCT pem.paciente_id 
+                        FROM paciente_enfermedad_medico pem 
+                        WHERE pem.medico_id = %s AND pem.estado = 'ACTIVO'
+                    )
+                    AND ac.estado = 'PENDIENTE'
+                """
+                params.append(medico_id)
+            else:
+                query += " WHERE ac.estado = 'PENDIENTE'"
+            
+            query += " ORDER BY ac.fecha_alerta DESC, ac.criticidad DESC"
+            
+            cursor.execute(query, params)
+            alertas = cursor.fetchall()
+            cursor.close()
+            
+            return alertas
+            
+        except Exception as e:
+            print(f"Error al obtener alertas pendientes: {str(e)}")
+            return []
+    
+    @classmethod
+    def contar_alertas_pendientes(cls, mysql, medico_id=None):
+        """Cuenta las alertas críticas pendientes"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            if medico_id:
+                query = """
+                    SELECT COUNT(*) as total
+                    FROM alertas_criticas ac
+                    WHERE ac.paciente_id IN (
+                        SELECT DISTINCT pem.paciente_id 
+                        FROM paciente_enfermedad_medico pem 
+                        WHERE pem.medico_id = %s AND pem.estado = 'ACTIVO'
+                    )
+                    AND ac.estado = 'PENDIENTE'
+                """
+                cursor.execute(query, (medico_id,))
+            else:
+                query = """
+                    SELECT COUNT(*) as total
+                    FROM alertas_criticas
+                    WHERE estado = 'PENDIENTE'
+                """
+                cursor.execute(query)
+            
+            resultado = cursor.fetchone()
+            cursor.close()
+            
+            return resultado['total'] if resultado else 0
+            
+        except Exception as e:
+            print(f"Error al contar alertas pendientes: {str(e)}")
+            return 0
+    
+    @classmethod
+    def marcar_como_resuelta(cls, mysql, alerta_id, medico_id, observaciones=None):
+        """Marca una alerta como resuelta"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                UPDATE alertas_criticas 
+                SET estado = 'RESUELTA', 
+                    medico_asignado_id = %s,
+                    fecha_resolucion = CURRENT_TIMESTAMP,
+                    observaciones = %s
+                WHERE id = %s
+            """
+            
+            cursor.execute(query, (medico_id, observaciones, alerta_id))
+            mysql.connection.commit()
+            cursor.close()
+            
+            return True
+            
+        except Exception as e:
+            mysql.connection.rollback()
+            print(f"Error al marcar alerta como resuelta: {str(e)}")
+            return False
+    
+    @classmethod
+    def obtener_por_paciente(cls, mysql, paciente_id, estado='todas'):
+        """Obtiene alertas de un paciente específico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT ac.*, e.nombre as enfermedad_nombre
+                FROM alertas_criticas ac
+                LEFT JOIN enfermedades e ON ac.enfermedad_relacionada_id = e.id
+                WHERE ac.paciente_id = %s
+            """
+            params = [paciente_id]
+            
+            if estado != 'todas':
+                query += " AND ac.estado = %s"
+                params.append(estado.upper())
+            
+            query += " ORDER BY ac.fecha_alerta DESC"
+            
+            cursor.execute(query, params)
+            alertas = cursor.fetchall()
+            cursor.close()
+            
+            return alertas
+            
+        except Exception as e:
+            print(f"Error al obtener alertas por paciente: {str(e)}")
+            return []
+
+# Agregar estos métodos a la clase Paciente existente:
+
+    @classmethod
+    def contar_pacientes_asignados(cls, mysql, medico_id):
+        """Cuenta los pacientes asignados a un médico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT COUNT(DISTINCT pem.paciente_id) as total
+                FROM paciente_enfermedad_medico pem
+                JOIN pacientes p ON pem.paciente_id = p.id
+                WHERE pem.medico_id = %s 
+                AND pem.estado = 'ACTIVO'
+                AND p.estado = 'ACTIVO'
+            """
+            
+            cursor.execute(query, (medico_id,))
+            resultado = cursor.fetchone()
+            cursor.close()
+            
+            return resultado['total'] if resultado else 0
+            
+        except Exception as e:
+            print(f"Error al contar pacientes asignados: {str(e)}")
+            return 0
+    
+    @classmethod
+    def obtener_pacientes_alto_riesgo(cls, mysql, medico_id, limit=5):
+        """Obtiene pacientes de alto riesgo asignados al médico"""
+        try:
+            cursor = mysql.connection.cursor()
+            
+            query = """
+                SELECT DISTINCT p.*, COUNT(ac.id) as alertas_criticas
+                FROM pacientes p
+                JOIN paciente_enfermedad_medico pem ON p.id = pem.paciente_id
+                LEFT JOIN alertas_criticas ac ON p.id = ac.paciente_id 
+                    AND ac.estado = 'PENDIENTE' 
+                    AND ac.criticidad = 'ALTA'
+                WHERE pem.medico_id = %s 
+                AND pem.estado = 'ACTIVO'
+                AND p.estado = 'ACTIVO'
+                GROUP BY p.id
+                HAVING alertas_criticas > 0
+                ORDER BY alertas_criticas DESC, ac.fecha_alerta DESC
+                LIMIT %s
+            """
+            
+            cursor.execute(query, (medico_id, limit))
+            pacientes = cursor.fetchall()
+            cursor.close()
+            
+            return pacientes
+            
+        except Exception as e:
+            print(f"Error al obtener pacientes de alto riesgo: {str(e)}")
+            return []
